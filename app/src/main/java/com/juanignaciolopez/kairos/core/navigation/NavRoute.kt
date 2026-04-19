@@ -7,6 +7,7 @@ sealed class NavRoute(val route: String) {
     
     // Rutas de autenticación
     data object Onboarding : NavRoute("onboarding")
+    data object OnboardingHelp : NavRoute("onboarding_help")
     data object SignIn : NavRoute("signin")
     data object SignUp : NavRoute("signup")
     data object ForgotPassword : NavRoute("forgot_password")

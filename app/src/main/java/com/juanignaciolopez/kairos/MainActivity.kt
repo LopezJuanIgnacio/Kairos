@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.juanignaciolopez.kairos.core.navigation.KairosNavHost
 import com.juanignaciolopez.kairos.core.navigation.NavRoute
+import com.juanignaciolopez.kairos.core.preferences.OnboardingPreferences
 import com.juanignaciolopez.kairos.domain.repository.AuthRepository
 import com.juanignaciolopez.kairos.ui.theme.KairosTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,7 +38,10 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    KairosApp(authRepository)
+                    KairosApp(
+                        authRepository = authRepository,
+                        onboardingPreferences = OnboardingPreferences(applicationContext)
+                    )
                 }
             }
         }
@@ -49,7 +53,10 @@ class MainActivity : ComponentActivity() {
  * Maneja la lógica de navegación y estados globales
  */
 @Composable
-fun KairosApp(authRepository: AuthRepository) {
+fun KairosApp(
+    authRepository: AuthRepository,
+    onboardingPreferences: OnboardingPreferences
+) {
     val isUserAuthenticated by produceState<Boolean?>(initialValue = null, authRepository) {
         value = authRepository.isUserAuthenticated()
     }
@@ -67,12 +74,15 @@ fun KairosApp(authRepository: AuthRepository) {
     val navController = rememberNavController()
     val startDestination = if (isUserAuthenticated == true) {
         NavRoute.Dashboard.route
+    } else if (!onboardingPreferences.isCompleted()) {
+        NavRoute.Onboarding.route
     } else {
         NavRoute.SignIn.route
     }
     
     KairosNavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = startDestination,
+        onOnboardingCompleted = onboardingPreferences::markCompleted
     )
 }

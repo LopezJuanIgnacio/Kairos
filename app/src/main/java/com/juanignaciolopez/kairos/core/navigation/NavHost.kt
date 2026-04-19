@@ -1,32 +1,13 @@
 package com.juanignaciolopez.kairos.core.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.juanignaciolopez.kairos.ui.auth.AuthViewModel
 import com.juanignaciolopez.kairos.ui.auth.LoginScreen
 import com.juanignaciolopez.kairos.ui.auth.RegisterScreen
+import com.juanignaciolopez.kairos.ui.dashboard.DashboardScreen
+import com.juanignaciolopez.kairos.ui.onboarding.OnboardingScreen
 
 /**
  * Composable para el Nav Host principal de la aplicación
@@ -35,14 +16,18 @@ import com.juanignaciolopez.kairos.ui.auth.RegisterScreen
 @Composable
 fun KairosNavHost(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String,
+    onOnboardingCompleted: () -> Unit
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
         // Auth Graph - Flujo de autenticación
-        authGraph(navController)
+        authGraph(
+            navController = navController,
+            onOnboardingCompleted = onOnboardingCompleted
+        )
         
         // Main Graph - Flujo principal de la app
         mainGraph(navController)
@@ -53,16 +38,32 @@ fun KairosNavHost(
  * Define las pantallas del flujo de autenticación
  */
 private fun androidx.navigation.NavGraphBuilder.authGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    onOnboardingCompleted: () -> Unit
 ) {
     composable(NavRoute.Onboarding.route) {
-        LoginScreen(
-            onNavigateDashboard = {
-                navController.navigate(NavRoute.Dashboard.route) {
-                    popUpTo(NavRoute.SignIn.route) { inclusive = true }
+        OnboardingScreen(
+            isHelpMode = false,
+            onFinish = {
+                onOnboardingCompleted()
+                navController.navigate(NavRoute.SignIn.route) {
+                    popUpTo(NavRoute.Onboarding.route) { inclusive = true }
                 }
             },
-            onNavigateRegister = { navController.navigate(NavRoute.SignUp.route) }
+            onSkip = {
+                onOnboardingCompleted()
+                navController.navigate(NavRoute.SignIn.route) {
+                    popUpTo(NavRoute.Onboarding.route) { inclusive = true }
+                }
+            }
+        )
+    }
+
+    composable(NavRoute.OnboardingHelp.route) {
+        OnboardingScreen(
+            isHelpMode = true,
+            onFinish = { navController.popBackStack() },
+            onSkip = { navController.popBackStack() }
         )
     }
     
@@ -102,6 +103,11 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
 ) {
     composable(NavRoute.Dashboard.route) {
         DashboardScreen(
+            onOpenHelp = { navController.navigate(NavRoute.OnboardingHelp.route) },
+            onCreateTask = { navController.navigate(NavRoute.TaskForm.route) },
+            onEditTask = { taskId ->
+                navController.navigate(NavRoute.TaskFormWithId.createRoute(taskId))
+            },
             onSignedOut = {
                 navController.navigate(NavRoute.SignIn.route) {
                     popUpTo(NavRoute.Dashboard.route) { inclusive = true }
@@ -116,18 +122,16 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
     }
     
     composable(NavRoute.TaskForm.route) {
-        // TaskFormScreen(navController, taskId = null)
-        // TODO: Implementar TaskFormScreen
+        // TODO: Reemplazar por TaskFormScreen real.
     }
     
     composable(NavRoute.TaskFormWithId.route) { backStackEntry ->
-        val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG) ?: ""
-        // TaskFormScreen(navController, taskId = taskId)
-        // TODO: Implementar TaskFormScreen con edición
+        val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG)
+        // TODO: Reemplazar por TaskFormScreen(taskId = idTarea) real.
     }
     
     composable(NavRoute.TaskDetail.route) { backStackEntry ->
-        val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG) ?: ""
+        val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG)
         // TaskDetailScreen(navController, taskId)
         // TODO: Implementar TaskDetailScreen
     }
@@ -145,63 +149,5 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
     composable(NavRoute.Notifications.route) {
         // NotificationsScreen(navController)
         // TODO: Implementar NotificationsScreen
-    }
-}
-
-@Composable
-private fun DashboardScreen(
-    onSignedOut: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
-) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(state.isSignedOut) {
-        if (state.isSignedOut) {
-            onSignedOut()
-            viewModel.consumeSignOutNavigation()
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Dashboard",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 36.sp
-            )
-        )
-
-        Button(
-            onClick = viewModel::signOut,
-            enabled = !state.isLoading,
-            modifier = Modifier
-                .padding(top = 24.dp)
-                .fillMaxWidth()
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(strokeWidth = 2.dp)
-            } else {
-                Text("Cerrar sesión")
-            }
-        }
-
-        if (state.errorMessage != null) {
-            Text(
-                text = state.errorMessage ?: "",
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 12.dp)
-            )
-        }
     }
 }
