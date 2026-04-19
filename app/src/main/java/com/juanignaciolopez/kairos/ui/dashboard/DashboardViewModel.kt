@@ -1,24 +1,30 @@
 package com.juanignaciolopez.kairos.ui.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.juanignaciolopez.kairos.core.notifications.TaskNotificationScheduler
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.Task
+import com.juanignaciolopez.kairos.data.models.TaskStatus
 import com.juanignaciolopez.kairos.domain.repository.AuthRepository
 import com.juanignaciolopez.kairos.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     authRepository: AuthRepository,
     private val taskRepository: TaskRepository
 ) : ViewModel() {
@@ -41,6 +47,21 @@ class DashboardViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
+    }
+
+    init {
+        if (userId.isNotBlank()) {
+            viewModelScope.launch {
+                taskRepository.getAllTasks(userId).collectLatest { allTasks ->
+                    val activeTasks = allTasks.filter {
+                        it.status != TaskStatus.COMPLETED &&
+                            it.status != TaskStatus.ARCHIVED &&
+                            it.status != TaskStatus.DELETED
+                    }
+                    TaskNotificationScheduler.syncNotifications(appContext, activeTasks)
+                }
+            }
+        }
     }
 
     fun deleteTask(taskId: String) {

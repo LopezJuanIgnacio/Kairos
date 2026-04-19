@@ -1,11 +1,15 @@
-package com.juanignaciolopez.kairos.ui.onboarding
+package com.juanignaciolopez.kairos.core.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -14,12 +18,15 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CircleIcon(
     icon: @Composable () -> Unit,
-    hasShadow: Boolean = true
+    onClick: (() -> Unit)? = null,
+    hasShadow: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val amber = MaterialTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(112.dp)
             .then(
                 if (hasShadow) {
@@ -33,7 +40,18 @@ fun CircleIcon(
                     Modifier
                 }
             )
-            .background(amber, CircleShape),
+            .background(amber, CircleShape)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(bounded = false),
+                        onClick = onClick
+                    )
+                } else {
+                    Modifier
+                }
+            ),
         contentAlignment = Alignment.Center
     ) {
         icon()

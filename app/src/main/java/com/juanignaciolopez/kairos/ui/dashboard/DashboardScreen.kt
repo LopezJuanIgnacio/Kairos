@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.os.Build
 import android.provider.CalendarContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.juanignaciolopez.kairos.core.components.CircleIcon
 import com.juanignaciolopez.kairos.core.utils.DateUtils
 import com.juanignaciolopez.kairos.core.utils.EnumUtils
 import com.juanignaciolopez.kairos.data.models.Task
@@ -94,6 +96,7 @@ fun DashboardScreen(
     var showBulkIncludeExportedDialog by remember { mutableStateOf(false) }
     var pendingBulkExportTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
     var pendingBulkExportLabel by remember { mutableStateOf("tareas") }
+    var hasRequestedNotificationPermission by rememberSaveable { mutableStateOf(false) }
 
     val activeTasks = allTasks.filter {
         it.status != TaskStatus.COMPLETED &&
@@ -157,6 +160,12 @@ fun DashboardScreen(
         }
 
         pendingCalendarExport = null
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        hasRequestedNotificationPermission = true
     }
 
     fun launchSingleTaskExport(task: Task) {
@@ -243,6 +252,18 @@ fun DashboardScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        val needsRuntimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val permissionGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (needsRuntimePermission && !permissionGranted && !hasRequestedNotificationPermission) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     LaunchedEffect(uiState.errorMessage) {
         if (!uiState.errorMessage.isNullOrBlank()) {
             snackbarHostState.showSnackbar(uiState.errorMessage ?: "Error inesperado")
@@ -272,13 +293,16 @@ fun DashboardScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreateTask,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Outlined.Add, contentDescription = "Crear nueva tarea")
-            }
+            CircleIcon(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = "Crear tarea",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                onClick = onCreateTask
+            )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
