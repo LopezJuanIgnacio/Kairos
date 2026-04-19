@@ -26,6 +26,8 @@ interface TaskRepository {
 
     suspend fun completeTask(taskId: String): Result<Unit>
 
+    suspend fun markTaskExported(taskId: String): Result<Unit>
+
     fun getNextActions(userId: String): Flow<List<Task>>
 
     fun searchTasks(

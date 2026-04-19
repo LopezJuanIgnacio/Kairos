@@ -58,6 +58,18 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    fun markTaskExported(taskId: String) {
+        if (taskId.isBlank()) return
+
+        viewModelScope.launch {
+            when (val result = taskRepository.markTaskExported(taskId)) {
+                is Result.Success -> Unit
+                is Result.Error -> _uiState.update { it.copy(errorMessage = result.message) }
+                is Result.Loading -> Unit
+            }
+        }
+    }
+
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }

@@ -38,7 +38,9 @@ object DatabaseModule {
             context,
             KairosDatabase::class.java,
             KairosDatabase.DATABASE_NAME
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
     
     @Provides

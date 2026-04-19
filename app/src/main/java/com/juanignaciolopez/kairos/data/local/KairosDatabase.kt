@@ -90,7 +90,7 @@ class Converters {
  */
 @Database(
     entities = [Task::class, User::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

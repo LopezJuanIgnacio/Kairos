@@ -1,6 +1,7 @@
 package com.juanignaciolopez.kairos.data.models
 
 import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
 import java.util.UUID
@@ -69,6 +70,10 @@ data class Task(
     val context: String = "",
     val project: String? = null,
     val isNextAction: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val isSaved: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val isExported: Boolean = false,
     val isSyncPending: Boolean = false,
     val lastSyncedAt: Long? = null,
     val tags: List<String> = emptyList()

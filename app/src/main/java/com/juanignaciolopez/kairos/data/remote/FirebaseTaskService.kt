@@ -181,6 +181,8 @@ class FirebaseTaskService(
             context = data["context"]?.toString().orEmpty(),
             project = data["project"]?.toString(),
             isNextAction = parseBoolean(data["isNextAction"]),
+            isSaved = parseBoolean(data["isSaved"]),
+            isExported = parseBoolean(data["isExported"]),
             isSyncPending = parseBoolean(data["isSyncPending"]),
             lastSyncedAt = parseLong(data["lastSyncedAt"]),
             tags = parseTags(data["tags"])

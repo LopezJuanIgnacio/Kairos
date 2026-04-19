@@ -42,9 +42,9 @@ class TaskRepositoryImpl(
 
     override suspend fun createTask(task: Task): Result<Task> = try {
         val tareaLocal = if (task.userId.isNotEmpty()) {
-            task.copy(isSyncPending = true, lastSyncedAt = null)
+            task.copy(isSaved = true, isSyncPending = true, lastSyncedAt = null)
         } else {
-            task
+            task.copy(isSaved = true)
         }
 
         daoTarea.insertTask(tareaLocal)
@@ -55,6 +55,7 @@ class TaskRepositoryImpl(
                 if (remoto is Result.Success) {
                     daoTarea.updateTask(
                         tareaLocal.copy(
+                            isSaved = true,
                             isSyncPending = false,
                             lastSyncedAt = System.currentTimeMillis()
                         )
@@ -70,9 +71,9 @@ class TaskRepositoryImpl(
 
     override suspend fun updateTask(task: Task): Result<Task> = try {
         val tareaLocal = if (task.userId.isNotEmpty()) {
-            task.copy(isSyncPending = true, lastSyncedAt = null)
+            task.copy(isSaved = true, isSyncPending = true, lastSyncedAt = null)
         } else {
-            task
+            task.copy(isSaved = true)
         }
 
         daoTarea.updateTask(tareaLocal)
@@ -83,6 +84,7 @@ class TaskRepositoryImpl(
                 if (remoto is Result.Success) {
                     daoTarea.updateTask(
                         tareaLocal.copy(
+                            isSaved = true,
                             isSyncPending = false,
                             lastSyncedAt = System.currentTimeMillis()
                         )
@@ -118,6 +120,46 @@ class TaskRepositoryImpl(
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Error("Error al completar tarea: ${e.message}", e)
+    }
+
+    override suspend fun markTaskExported(taskId: String): Result<Unit> = try {
+        val tarea = daoTarea.getTaskById(taskId)
+            ?: return Result.Error("Tarea no encontrada")
+
+        val now = System.currentTimeMillis()
+        val tareaActualizada = if (tarea.userId.isNotEmpty()) {
+            tarea.copy(
+                isExported = true,
+                updatedAt = now,
+                isSyncPending = true,
+                lastSyncedAt = null
+            )
+        } else {
+            tarea.copy(
+                isExported = true,
+                updatedAt = now
+            )
+        }
+
+        daoTarea.updateTask(tareaActualizada)
+
+        if (tareaActualizada.userId.isNotEmpty()) {
+            backgroundSyncScope.launch {
+                val remoto = servicioFirebaseTareas.updateTask(tareaActualizada.userId, tareaActualizada)
+                if (remoto is Result.Success) {
+                    daoTarea.updateTask(
+                        tareaActualizada.copy(
+                            isSyncPending = false,
+                            lastSyncedAt = System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+        }
+
+        Result.Success(Unit)
+    } catch (e: Exception) {
+        Result.Error("Error al marcar tarea exportada: ${e.message}", e)
     }
 
     override fun getNextActions(userId: String): Flow<List<Task>> = daoTarea.getNextActions(userId)

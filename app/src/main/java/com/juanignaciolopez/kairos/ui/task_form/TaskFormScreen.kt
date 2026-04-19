@@ -1,6 +1,7 @@
 package com.juanignaciolopez.kairos.ui.task_form
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -132,7 +133,7 @@ fun TaskFormScreen(
             DueDateField(
                 dueDate = uiState.dueDate,
                 dueDateError = uiState.dueDateError,
-                onSelectDate = viewModel::onDueDateChanged
+                onSelectDateTime = viewModel::onDueDateChanged
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -210,7 +211,7 @@ private fun CategoryDropdown(
 private fun DueDateField(
     dueDate: Long?,
     dueDateError: String?,
-    onSelectDate: (Long?) -> Unit
+    onSelectDateTime: (Long?) -> Unit
 ) {
     val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
@@ -219,20 +220,37 @@ private fun DueDateField(
         calendar.timeInMillis = dueDate
     }
 
-    val openDatePicker = {
+    val openDateTimePicker = {
         DatePickerDialog(
             context,
             { _, year, month, dayOfMonth ->
-                val selected = Calendar.getInstance().apply {
+                val dateCalendar = Calendar.getInstance().apply {
                     set(Calendar.YEAR, year)
                     set(Calendar.MONTH, month)
                     set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    set(Calendar.HOUR_OF_DAY, 23)
-                    set(Calendar.MINUTE, 59)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-                onSelectDate(selected)
+
+                    // Si existe una fecha previa, conservamos la hora ya elegida.
+                    if (dueDate != null) {
+                        set(Calendar.HOUR_OF_DAY, calendar.get(Calendar.HOUR_OF_DAY))
+                        set(Calendar.MINUTE, calendar.get(Calendar.MINUTE))
+                    }
+                }
+
+                TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                        dateCalendar.apply {
+                            set(Calendar.HOUR_OF_DAY, hourOfDay)
+                            set(Calendar.MINUTE, minute)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        onSelectDateTime(dateCalendar.timeInMillis)
+                    },
+                    dateCalendar.get(Calendar.HOUR_OF_DAY),
+                    dateCalendar.get(Calendar.MINUTE),
+                    false
+                ).show()
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -242,16 +260,16 @@ private fun DueDateField(
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         OutlinedTextField(
-            value = dueDate?.let(DateUtils::formatDate) ?: "Seleccionar fecha límite",
+            value = dueDate?.let(DateUtils::formatDateTime) ?: "Seleccionar fecha y hora límite",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Fecha límite") },
+            label = { Text("Fecha y hora límite") },
             isError = dueDateError != null,
             modifier = Modifier.fillMaxWidth()
         )
 
-        TextButton(onClick = openDatePicker, modifier = Modifier.align(Alignment.Start)) {
-            Text("Elegir fecha")
+        TextButton(onClick = openDateTimePicker, modifier = Modifier.align(Alignment.Start)) {
+            Text("Elegir fecha y hora")
         }
 
         if (dueDateError != null) {
