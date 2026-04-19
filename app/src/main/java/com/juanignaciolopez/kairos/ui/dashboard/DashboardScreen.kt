@@ -92,6 +92,8 @@ fun DashboardScreen(
     var pendingCalendarExport by remember { mutableStateOf<PendingCalendarExport?>(null) }
     var showBulkExportCountDialog by remember { mutableStateOf(false) }
     var showBulkIncludeExportedDialog by remember { mutableStateOf(false) }
+    var pendingBulkExportTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
+    var pendingBulkExportLabel by remember { mutableStateOf("tareas") }
 
     val activeTasks = allTasks.filter {
         it.status != TaskStatus.COMPLETED &&
@@ -178,11 +180,11 @@ fun DashboardScreen(
         )
     }
 
-    fun launchBulkTasksExport(includeAlreadyExported: Boolean) {
+    fun launchBulkTasksExport(baseTasks: List<Task>, includeAlreadyExported: Boolean) {
         val tasksToExport = if (includeAlreadyExported) {
-            activeTasks
+            baseTasks
         } else {
-            activeTasks.filter { !it.isExported }
+            baseTasks.filter { !it.isExported }
         }
 
         if (tasksToExport.isEmpty()) {
@@ -221,6 +223,19 @@ fun DashboardScreen(
         )
     }
 
+    fun requestBulkExport(tasks: List<Task>, label: String) {
+        if (tasks.isEmpty()) {
+            scope.launch {
+                snackbarHostState.showSnackbar("No hay tareas para exportar")
+            }
+            return
+        }
+
+        pendingBulkExportTasks = tasks
+        pendingBulkExportLabel = label
+        showBulkExportCountDialog = true
+    }
+
     LaunchedEffect(authState.isSignedOut) {
         if (authState.isSignedOut) {
             onSignedOut()
@@ -242,13 +257,7 @@ fun DashboardScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            if (activeTasks.isEmpty()) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("No hay tareas para exportar")
-                                }
-                            } else {
-                                showBulkExportCountDialog = true
-                            }
+                            requestBulkExport(activeTasks, "todas las tareas")
                         }
                     ) {
                         Icon(Icons.Outlined.IosShare, contentDescription = "Exportar todo")
@@ -287,6 +296,12 @@ fun DashboardScreen(
                         tasks = tasksByCategory[category].orEmpty(),
                         onEditTask = onEditTask,
                         onDeleteTask = { pendingDeleteTask = it },
+                        onExportAllTasks = {
+                            requestBulkExport(
+                                tasks = tasksByCategory[category].orEmpty(),
+                                label = "${EnumUtils.categoryToString(category)}"
+                            )
+                        },
                         onExportTask = { task ->
                             if (task.isExported) {
                                 pendingExportConfirmationTask = task
@@ -370,7 +385,7 @@ fun DashboardScreen(
             onDismissRequest = { showBulkExportCountDialog = false },
             title = { Text("Exportar tareas") },
             text = {
-                Text("Se exportarán ${activeTasks.size} tareas como eventos separados. ¿Deseas continuar?")
+                Text("Se exportarán ${pendingBulkExportTasks.size} tareas de ${pendingBulkExportLabel} como eventos separados. ¿Deseas continuar?")
             },
             confirmButton = {
                 TextButton(
@@ -401,7 +416,10 @@ fun DashboardScreen(
                 TextButton(
                     onClick = {
                         showBulkIncludeExportedDialog = false
-                        launchBulkTasksExport(includeAlreadyExported = true)
+                        launchBulkTasksExport(
+                            baseTasks = pendingBulkExportTasks,
+                            includeAlreadyExported = true
+                        )
                     }
                 ) {
                     Text("Sí, incluir")
@@ -411,7 +429,10 @@ fun DashboardScreen(
                 TextButton(
                     onClick = {
                         showBulkIncludeExportedDialog = false
-                        launchBulkTasksExport(includeAlreadyExported = false)
+                        launchBulkTasksExport(
+                            baseTasks = pendingBulkExportTasks,
+                            includeAlreadyExported = false
+                        )
                     }
                 ) {
                     Text("No, solo nuevas")
@@ -460,17 +481,31 @@ private fun CategorySection(
     tasks: List<Task>,
     onEditTask: (String) -> Unit,
     onDeleteTask: (Task) -> Unit,
+    onExportAllTasks: () -> Unit,
     onExportTask: (Task) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            IconButton(onClick = onExportAllTasks) {
+                Icon(
+                    imageVector = Icons.Outlined.IosShare,
+                    contentDescription = "Exportar categoría"
+                )
+            }
+        }
 
         if (tasks.isEmpty()) {
             Text(
