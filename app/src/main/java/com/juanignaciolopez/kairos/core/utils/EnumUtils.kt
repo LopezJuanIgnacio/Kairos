@@ -1,6 +1,7 @@
 package com.juanignaciolopez.kairos.core.utils
 
 import com.juanignaciolopez.kairos.data.models.TaskPriority
+import com.juanignaciolopez.kairos.data.models.TaskCategory
 import com.juanignaciolopez.kairos.data.models.TaskStatus
 
 /**
@@ -25,6 +26,14 @@ object EnumUtils {
         TaskStatus.ARCHIVED -> "Archivada"
         TaskStatus.DELETED -> "Eliminada"
     }
+
+    fun categoryToString(category: TaskCategory): String = when (category) {
+        TaskCategory.RECURRENT -> "Recurrente"
+        TaskCategory.ACTIONABLE -> "Accionable"
+        TaskCategory.SHORT_TERM -> "Corto Plazo"
+        TaskCategory.LONG_TERM -> "Largo Plazo"
+        TaskCategory.INCUBATOR -> "Incubadora"
+    }
     
     fun stringToPriority(string: String): TaskPriority = when (string) {
         "Crítica" -> TaskPriority.VERY_HIGH
@@ -44,5 +53,14 @@ object EnumUtils {
         "Archivada" -> TaskStatus.ARCHIVED
         "Eliminada" -> TaskStatus.DELETED
         else -> TaskStatus.TODO
+    }
+
+    fun stringToCategory(string: String): TaskCategory = when (string) {
+        "Recurrente" -> TaskCategory.RECURRENT
+        "Accionable" -> TaskCategory.ACTIONABLE
+        "Corto Plazo" -> TaskCategory.SHORT_TERM
+        "Largo Plazo" -> TaskCategory.LONG_TERM
+        "Incubadora" -> TaskCategory.INCUBATOR
+        else -> TaskCategory.ACTIONABLE
     }
 }

@@ -55,10 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.juanignaciolopez.kairos.core.utils.DateUtils
+import com.juanignaciolopez.kairos.core.utils.EnumUtils
 import com.juanignaciolopez.kairos.data.models.Task
+import com.juanignaciolopez.kairos.data.models.TaskCategory
 import com.juanignaciolopez.kairos.data.models.TaskStatus
 import com.juanignaciolopez.kairos.ui.auth.AuthViewModel
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,22 +84,8 @@ fun DashboardScreen(
             it.status != TaskStatus.DELETED
     }
 
-    val now = System.currentTimeMillis()
-    val weekInMillis = 7L * 24L * 60L * 60L * 1000L
-
-    val recurrentes = activeTasks.filter { it.isRecurring }
-    val accionables = activeTasks.filter {
-        it.isNextAction || (it.estimatedMinutes in 1..5)
-    }
-    val cortoPlazo = activeTasks.filter { task ->
-        task.dueDate?.let { due ->
-            due >= now && due - now <= weekInMillis
-        } == true
-    }
-    val largoPlazo = activeTasks.filter { task ->
-        task.dueDate?.let { due ->
-            due - now > weekInMillis
-        } == true
+    val tasksByCategory = TaskCategory.entries.associateWith { category ->
+        activeTasks.filter { it.category == category }
     }
 
     LaunchedEffect(authState.isSignedOut) {
@@ -150,41 +137,16 @@ fun DashboardScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            item {
-                CategorySection(
-                    title = "Recurrentes",
-                    tasks = recurrentes,
-                    onEditTask = onEditTask,
-                    onDeleteTask = { pendingDeleteTask = it },
-                    onExportTask = { exportTaskToCalendar(context, it) }
-                )
-            }
-            item {
-                CategorySection(
-                    title = "Accionables",
-                    tasks = accionables,
-                    onEditTask = onEditTask,
-                    onDeleteTask = { pendingDeleteTask = it },
-                    onExportTask = { exportTaskToCalendar(context, it) }
-                )
-            }
-            item {
-                CategorySection(
-                    title = "Corto plazo",
-                    tasks = cortoPlazo,
-                    onEditTask = onEditTask,
-                    onDeleteTask = { pendingDeleteTask = it },
-                    onExportTask = { exportTaskToCalendar(context, it) }
-                )
-            }
-            item {
-                CategorySection(
-                    title = "Largo plazo",
-                    tasks = largoPlazo,
-                    onEditTask = onEditTask,
-                    onDeleteTask = { pendingDeleteTask = it },
-                    onExportTask = { exportTaskToCalendar(context, it) }
-                )
+            TaskCategory.entries.forEach { category ->
+                item {
+                    CategorySection(
+                        title = EnumUtils.categoryToString(category),
+                        tasks = tasksByCategory[category].orEmpty(),
+                        onEditTask = onEditTask,
+                        onDeleteTask = { pendingDeleteTask = it },
+                        onExportTask = { exportTaskToCalendar(context, it) }
+                    )
+                }
             }
         }
     }
@@ -366,8 +328,9 @@ private fun exportTaskToCalendar(context: android.content.Context, task: Task) {
 private fun exportAllTasksToCalendar(context: android.content.Context, tasks: List<Task>) {
     if (tasks.isEmpty()) return
 
+    val now = System.currentTimeMillis()
     val nextDate = tasks.mapNotNull { it.dueDate ?: it.scheduledDate }
-        .minByOrNull { abs(it - System.currentTimeMillis()) }
+        .minByOrNull { kotlin.math.abs(it - now) }
         ?: System.currentTimeMillis() + 60 * 60 * 1000
 
     val description = buildString {

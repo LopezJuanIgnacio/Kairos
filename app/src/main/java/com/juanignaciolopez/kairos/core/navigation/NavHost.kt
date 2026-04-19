@@ -8,6 +8,7 @@ import com.juanignaciolopez.kairos.ui.auth.LoginScreen
 import com.juanignaciolopez.kairos.ui.auth.RegisterScreen
 import com.juanignaciolopez.kairos.ui.dashboard.DashboardScreen
 import com.juanignaciolopez.kairos.ui.onboarding.OnboardingScreen
+import com.juanignaciolopez.kairos.ui.task_form.TaskFormScreen
 
 /**
  * Composable para el Nav Host principal de la aplicación
@@ -122,12 +123,22 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
     }
     
     composable(NavRoute.TaskForm.route) {
-        // TODO: Reemplazar por TaskFormScreen real.
+        TaskFormScreen(
+            onCancel = { navController.popBackStack() },
+            onSaved = { navController.popBackStack() }
+        )
     }
     
     composable(NavRoute.TaskFormWithId.route) { backStackEntry ->
         val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG)
-        // TODO: Reemplazar por TaskFormScreen(taskId = idTarea) real.
+        if (idTarea.isNullOrBlank()) {
+            navController.popBackStack()
+        } else {
+            TaskFormScreen(
+                onCancel = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() }
+            )
+        }
     }
     
     composable(NavRoute.TaskDetail.route) { backStackEntry ->

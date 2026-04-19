@@ -36,15 +36,11 @@ enum class TaskStatus {
  */
 @Serializable
 enum class TaskCategory {
-    WORK,
-    PERSONAL,
-    HEALTH,
-    FINANCE,
-    LEARNING,
-    FAMILY,
-    HOME,
-    SOMEDAY,
-    OTHER
+    RECURRENT,
+    ACTIONABLE,
+    SHORT_TERM,
+    LONG_TERM,
+    INCUBATOR
 }
 
 /**
@@ -60,7 +56,7 @@ data class Task(
     val description: String = "",
     val status: TaskStatus = TaskStatus.INBOX,
     val priority: TaskPriority = TaskPriority.NORMAL,
-    val category: TaskCategory = TaskCategory.PERSONAL,
+    val category: TaskCategory = TaskCategory.ACTIONABLE,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val scheduledDate: Long? = null,
