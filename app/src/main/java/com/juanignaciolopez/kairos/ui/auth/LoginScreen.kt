@@ -1,7 +1,6 @@
 package com.juanignaciolopez.kairos.ui.auth
 
-import android.content.Intent
-import androidx.compose.foundation.border
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,12 +45,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
+import androidx.credentials.CustomCredential
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.juanignaciolopez.kairos.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -61,40 +64,11 @@ fun LoginScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
-    val inputShape = RoundedCornerShape(24.dp)
     val contexto = LocalContext.current
-    val webClientId = contexto.getString(R.string.google_web_client_id)
-    val configuracionGoogleValida =
-        webClientId.isNotBlank() &&
-            !webClientId.startsWith("REEMPLAZA_") &&
-            webClientId.endsWith(".apps.googleusercontent.com")
-
-    val googleLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { resultado ->
-        val cuenta = try {
-            GoogleSignIn.getSignedInAccountFromIntent(resultado.data as Intent?)
-                .getResult(ApiException::class.java)
-        } catch (_: Exception) {
-            null
-        }
-        viewModel.signInWithGoogle(cuenta?.idToken)
-    }
-
-    val opcionesGoogle = remember(webClientId, configuracionGoogleValida) {
-        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
-            .requestEmail()
-            .build()
-    }
-
-    val clienteGoogle = remember(webClientId, configuracionGoogleValida) {
-        if (configuracionGoogleValida) {
-            GoogleSignIn.getClient(contexto, opcionesGoogle)
-        } else {
-            null
-        }
-    }
+    val webClientId = remember(contexto) { resolveGoogleWebClientId(contexto) }
+    val configuracionGoogleValida = webClientId.isNotBlank()
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember(contexto) { CredentialManager.create(contexto) }
 
     // Navega al dashboard si el usuario está autenticado
     LaunchedEffect(state.isAuthenticated) {
@@ -132,15 +106,8 @@ fun LoginScreen(
         OutlinedTextField(
             value = state.email,
             onValueChange = viewModel::onEmailChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Email") },
-            shape = inputShape,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.Email,
@@ -148,15 +115,6 @@ fun LoginScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 
@@ -165,15 +123,8 @@ fun LoginScreen(
         OutlinedTextField(
             value = state.password,
             onValueChange = viewModel::onPasswordChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Password") },
-            shape = inputShape,
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
@@ -184,15 +135,6 @@ fun LoginScreen(
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 
@@ -250,11 +192,18 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                val cliente = clienteGoogle
-                if (cliente == null) {
-                    viewModel.setError("Configura google_web_client_id en strings.xml con tu Web Client ID de Firebase")
+                if (!configuracionGoogleValida) {
+                    viewModel.setError("No se pudo resolver el Web Client ID de Firebase")
                 } else {
-                    googleLauncher.launch(cliente.signInIntent)
+                    coroutineScope.launch {
+                        runGoogleSignIn(
+                            context = contexto,
+                            credentialManager = credentialManager,
+                            webClientId = webClientId,
+                            onToken = viewModel::signInWithGoogle,
+                            onError = viewModel::setError
+                        )
+                    }
                 }
             },
             enabled = !state.isLoading,
@@ -283,4 +232,59 @@ fun LoginScreen(
             }
         }
     }
+}
+
+private suspend fun runGoogleSignIn(
+    context: Context,
+    credentialManager: CredentialManager,
+    webClientId: String,
+    onToken: (String?) -> Unit,
+    onError: (String) -> Unit
+) {
+    try {
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setServerClientId(webClientId)
+            .setFilterByAuthorizedAccounts(false)
+            .setAutoSelectEnabled(false)
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        val result = credentialManager.getCredential(
+            context = context,
+            request = request
+        )
+
+        val customCredential = result.credential as? CustomCredential
+        if (customCredential == null || customCredential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            onError("No se pudo obtener la credencial de Google")
+            return
+        }
+
+        val googleCredential = GoogleIdTokenCredential.createFrom(customCredential.data)
+        onToken(googleCredential.idToken)
+    } catch (_: NoCredentialException) {
+        onError("No hay una cuenta de Google disponible en este dispositivo")
+    } catch (e: GetCredentialException) {
+        onError(e.message ?: "No se pudo iniciar Google Sign-In")
+    } catch (e: Exception) {
+        onError(e.message ?: "No se pudo iniciar Google Sign-In")
+    }
+}
+
+private fun resolveGoogleWebClientId(context: Context): String {
+    val generatedId = context.resources.getIdentifier(
+        "default_web_client_id",
+        "string",
+        context.packageName
+    )
+
+    if (generatedId != 0) {
+        val value = context.getString(generatedId).trim()
+        if (value.isNotBlank()) return value
+    }
+
+    return context.getString(R.string.google_web_client_id).trim()
 }

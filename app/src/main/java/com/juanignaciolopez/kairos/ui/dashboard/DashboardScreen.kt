@@ -301,7 +301,8 @@ fun DashboardScreen(
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 },
-                onClick = onCreateTask
+                onClick = onCreateTask,
+                size = 88.dp
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -508,47 +509,55 @@ private fun CategorySection(
     onExportAllTasks: () -> Unit,
     onExportTask: (Task) -> Unit
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = CardDefaults.outlinedCardBorder().copy(width = 3.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            IconButton(onClick = onExportAllTasks) {
-                Icon(
-                    imageVector = Icons.Outlined.IosShare,
-                    contentDescription = "Exportar categoría"
-                )
-            }
-        }
-
-        if (tasks.isEmpty()) {
-            Text(
-                text = "Sin tareas en esta categoría",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.height(260.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(items = tasks, key = { it.id }) { task ->
-                    TaskCard(
-                        task = task,
-                        onEdit = { onEditTask(task.id) },
-                        onDelete = { onDeleteTask(task) },
-                        onExport = { onExportTask(task) }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                IconButton(onClick = onExportAllTasks) {
+                    Icon(
+                        imageVector = Icons.Outlined.IosShare,
+                        contentDescription = "Exportar categoría",
+                        tint = MaterialTheme.colorScheme.primary
                     )
+                }
+            }
+
+            if (tasks.isEmpty()) {
+                Text(
+                    text = "Sin tareas en esta categoría",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    tasks.forEach { task ->
+                        TaskCard(
+                            task = task,
+                            onEdit = { onEditTask(task.id) },
+                            onDelete = { onDeleteTask(task) },
+                            onExport = { onExportTask(task) }
+                        )
+                    }
                 }
             }
         }
@@ -565,12 +574,12 @@ private fun TaskCard(
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = CardDefaults.outlinedCardBorder().copy(width = 2.dp),
+        border = CardDefaults.outlinedCardBorder().copy(width = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
                 text = task.title,
@@ -582,6 +591,7 @@ private fun TaskCard(
             if (task.description.isNotBlank()) {
                 Text(
                     text = task.description,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -592,35 +602,60 @@ private fun TaskCard(
 
             Text(
                 text = dateText,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDelete) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Notify: 15:30",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
                         contentDescription = "Eliminar",
-                        tint = MaterialTheme.colorScheme.error
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                IconButton(onClick = onEdit) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
                         contentDescription = "Editar",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                IconButton(onClick = onExport) {
+                IconButton(onClick = onExport, modifier = Modifier.size(48.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.CalendarMonth,
                         contentDescription = "Exportar al calendario",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }

@@ -47,7 +47,6 @@ fun RegisterScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
-    val inputShape = RoundedCornerShape(24.dp)
 
     LaunchedEffect(state.isAuthenticated) {
         if (state.isAuthenticated) {
@@ -65,15 +64,8 @@ fun RegisterScreen(
         OutlinedTextField(
             value = state.email,
             onValueChange = viewModel::onEmailChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Email") },
-            shape = inputShape,
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.Email,
@@ -81,15 +73,6 @@ fun RegisterScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 
@@ -98,15 +81,8 @@ fun RegisterScreen(
         OutlinedTextField(
             value = state.password,
             onValueChange = viewModel::onPasswordChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Password") },
-            shape = inputShape,
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
@@ -117,15 +93,6 @@ fun RegisterScreen(
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 
@@ -134,24 +101,8 @@ fun RegisterScreen(
         OutlinedTextField(
             value = state.firstName,
             onValueChange = viewModel::onFirstNameChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("First name") },
-            shape = inputShape,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 
@@ -160,24 +111,8 @@ fun RegisterScreen(
         OutlinedTextField(
             value = state.lastName,
             onValueChange = viewModel::onLastNameChanged,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 3.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = inputShape
-                ),
+            modifier = Modifier.fillMaxWidth(),
             label = { Text("Last name") },
-            shape = inputShape,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
-                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                unfocusedLabelColor = MaterialTheme.colorScheme.primary,
-                focusedTextColor = MaterialTheme.colorScheme.primary,
-                unfocusedTextColor = MaterialTheme.colorScheme.primary,
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
             singleLine = true
         )
 

@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -20,14 +21,15 @@ fun CircleIcon(
     icon: @Composable () -> Unit,
     onClick: (() -> Unit)? = null,
     hasShadow: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    size: Dp = 112.dp
 ) {
     val amber = MaterialTheme.colorScheme.primary
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = modifier
-            .size(112.dp)
+            .size(size)
             .then(
                 if (hasShadow) {
                     Modifier.shadow(
