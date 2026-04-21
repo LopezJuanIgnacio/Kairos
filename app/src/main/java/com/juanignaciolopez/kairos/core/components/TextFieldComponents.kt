@@ -55,30 +55,3 @@ fun CustomTextField(
         }
     }
 }
-
-@Composable
-fun CampoTextoPersonalizado(
-    valor: String,
-    alCambiarValor: (String) -> Unit,
-    etiqueta: String,
-    placeholder: String = "",
-    modifier: Modifier = Modifier,
-    esError: Boolean = false,
-    mensajeError: String? = null,
-    maxLineas: Int = 1,
-    transformacionVisual: VisualTransformation = VisualTransformation.None,
-    opcionesTeclado: KeyboardOptions = KeyboardOptions.Default
-) {
-    CustomTextField(
-        value = valor,
-        onValueChange = alCambiarValor,
-        label = etiqueta,
-        placeholder = placeholder,
-        modifier = modifier,
-        isError = esError,
-        errorMessage = mensajeError,
-        maxLines = maxLineas,
-        visualTransformation = transformacionVisual,
-        keyboardOptions = opcionesTeclado
-    )
-}

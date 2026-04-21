@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.juanignaciolopez.kairos.R
 
 @Composable
 fun RegisterScreen(
@@ -65,11 +67,11 @@ fun RegisterScreen(
             value = state.email,
             onValueChange = viewModel::onEmailChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email_label)) },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.Email,
-                    contentDescription = "Email",
+                    contentDescription = stringResource(R.string.auth_email_label),
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
@@ -82,12 +84,12 @@ fun RegisterScreen(
             value = state.password,
             onValueChange = viewModel::onPasswordChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.auth_password_label)) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = "Mostrar contraseña",
+                        contentDescription = stringResource(R.string.auth_toggle_password_visibility),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -102,7 +104,7 @@ fun RegisterScreen(
             value = state.firstName,
             onValueChange = viewModel::onFirstNameChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("First name") },
+            label = { Text(stringResource(R.string.auth_first_name_label)) },
             singleLine = true
         )
 
@@ -112,7 +114,7 @@ fun RegisterScreen(
             value = state.lastName,
             onValueChange = viewModel::onLastNameChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Last name") },
+            label = { Text(stringResource(R.string.auth_last_name_label)) },
             singleLine = true
         )
 
@@ -145,7 +147,7 @@ fun RegisterScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Register", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.auth_register), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -163,7 +165,7 @@ fun RegisterScreen(
                 .fillMaxWidth()
                 .height(72.dp)
         ) {
-            Text("Go Back", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.auth_go_back), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
         }
     }
 }

@@ -2,7 +2,11 @@ package com.juanignaciolopez.kairos.ui.task_form
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,15 +15,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -36,9 +44,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.juanignaciolopez.kairos.R
 import com.juanignaciolopez.kairos.core.components.CustomTextField
 import com.juanignaciolopez.kairos.core.utils.DateUtils
 import com.juanignaciolopez.kairos.core.utils.EnumUtils
@@ -53,11 +65,12 @@ fun TaskFormScreen(
     viewModel: TaskFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.errorMessage) {
         if (!uiState.errorMessage.isNullOrBlank()) {
-            snackbarHostState.showSnackbar(uiState.errorMessage ?: "Error inesperado")
+            snackbarHostState.showSnackbar(uiState.errorMessage ?: context.getString(R.string.common_unexpected_error))
             viewModel.clearError()
         }
     }
@@ -70,19 +83,6 @@ fun TaskFormScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (uiState.isEditMode) {
-                            "Editar tarea"
-                        } else {
-                            "Crear tarea"
-                        }
-                    )
-                }
-            )
-        },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -109,8 +109,8 @@ fun TaskFormScreen(
             CustomTextField(
                 value = uiState.title,
                 onValueChange = viewModel::onTitleChanged,
-                label = "Título",
-                placeholder = "Ej. Preparar presentación",
+                label = stringResource(R.string.task_form_title_label),
+                placeholder = stringResource(R.string.task_form_title_placeholder),
                 isError = uiState.titleError != null,
                 errorMessage = uiState.titleError
             )
@@ -118,8 +118,8 @@ fun TaskFormScreen(
             CustomTextField(
                 value = uiState.description,
                 onValueChange = viewModel::onDescriptionChanged,
-                label = "Descripción",
-                placeholder = "Detalles de la tarea",
+                label = stringResource(R.string.task_form_description_label),
+                placeholder = stringResource(R.string.task_form_description_placeholder),
                 maxLines = 4,
                 isError = uiState.descriptionError != null,
                 errorMessage = uiState.descriptionError
@@ -136,12 +136,19 @@ fun TaskFormScreen(
                 onSelectDateTime = viewModel::onDueDateChanged
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(150.dp))
 
             Button(
                 onClick = viewModel::saveTask,
                 enabled = !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(22.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
             ) {
                 if (uiState.isSaving) {
                     CircularProgressIndicator(
@@ -151,15 +158,22 @@ fun TaskFormScreen(
                         strokeWidth = 2.dp
                     )
                 }
-                Text("Guardar")
+                Text(stringResource(R.string.common_save), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             }
 
-            TextButton(
+            OutlinedButton(
                 onClick = onCancel,
                 enabled = !uiState.isSaving,
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(22.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                border = BorderStroke(3.dp, MaterialTheme.colorScheme.error),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
             ) {
-                Text("Cancelar")
+                Text(stringResource(R.string.common_cancel), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -181,7 +195,7 @@ private fun CategoryDropdown(
             value = EnumUtils.categoryToString(selected),
             onValueChange = {},
             readOnly = true,
-            label = { Text("Categoría") },
+            label = { Text(stringResource(R.string.common_category)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -215,6 +229,7 @@ private fun DueDateField(
 ) {
     val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
+    val pickerInteractionSource = remember { MutableInteractionSource() }
 
     if (dueDate != null) {
         calendar.timeInMillis = dueDate
@@ -259,17 +274,31 @@ private fun DueDateField(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        OutlinedTextField(
-            value = dueDate?.let(DateUtils::formatDateTime) ?: "Seleccionar fecha y hora límite",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Fecha y hora límite") },
-            isError = dueDateError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        TextButton(onClick = openDateTimePicker, modifier = Modifier.align(Alignment.Start)) {
-            Text("Elegir fecha y hora")
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = pickerInteractionSource,
+                    indication = null,
+                    onClick = openDateTimePicker
+                )
+        ) {
+            OutlinedTextField(
+                value = dueDate?.let(DateUtils::formatDateTime)
+                    ?: stringResource(R.string.task_form_due_date_placeholder),
+                onValueChange = {},
+                enabled = false,
+                label = { Text(stringResource(R.string.task_form_due_date_label)) },
+                isError = dueDateError != null,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         if (dueDateError != null) {

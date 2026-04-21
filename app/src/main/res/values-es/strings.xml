@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="common_save">Guardar</string>
+	<string name="common_cancel">Cancelar</string>
+	<string name="common_delete">Eliminar</string>
+	<string name="common_edit">Editar</string>
+	<string name="common_continue">Continuar</string>
+	<string name="common_category">Categoria</string>
+	<string name="common_unexpected_error">Error inesperado</string>
+
+	<string name="auth_email_label">Email</string>
+	<string name="auth_password_label">Contrasena</string>
+	<string name="auth_toggle_password_visibility">Mostrar u ocultar contrasena</string>
+	<string name="auth_sign_in">Iniciar sesion</string>
+	<string name="auth_register">Registrarse</string>
+	<string name="auth_sign_in_with_google">Iniciar sesion con Google</string>
+	<string name="auth_first_name_label">Nombre</string>
+	<string name="auth_last_name_label">Apellido</string>
+	<string name="auth_go_back">Volver</string>
+	<string name="auth_google_web_client_id_error">No se pudo resolver el Web Client ID de Firebase</string>
+	<string name="auth_google_credential_error">No se pudo obtener la credencial de Google</string>
+	<string name="auth_google_no_account_error">No hay una cuenta de Google disponible en este dispositivo</string>
+	<string name="auth_google_sign_in_error">No se pudo iniciar Google Sign-In</string>
+
+	<string name="task_form_title_label">Titulo</string>
+	<string name="task_form_title_placeholder">Ej. Preparar presentacion</string>
+	<string name="task_form_description_label">Descripcion</string>
+	<string name="task_form_description_placeholder">Detalles de la tarea</string>
+	<string name="task_form_due_date_label">Fecha y hora limite</string>
+	<string name="task_form_due_date_placeholder">Seleccionar fecha y hora limite</string>
+
+	<string name="dashboard_tasks_label">tareas</string>
+	<string name="dashboard_all_tasks_label">todas las tareas</string>
+	<string name="dashboard_calendar_permission_required">Se requieren permisos de calendario para exportar tareas</string>
+	<string name="dashboard_calendar_app_not_found">No se pudo abrir una app de calendario</string>
+	<string name="dashboard_no_tasks_to_export">No hay tareas para exportar</string>
+	<string name="dashboard_calendar_save_failed">No se pudo guardar eventos en el calendario</string>
+	<string name="dashboard_exported_count_message">Se exportaron %1$d de %2$d tareas</string>
+	<string name="dashboard_no_tasks_for_filter">No hay tareas para exportar con ese filtro</string>
+	<string name="dashboard_sign_out_content_description">Cerrar sesion</string>
+	<string name="dashboard_help_content_description">Ayuda</string>
+	<string name="dashboard_export_all_content_description">Exportar todo</string>
+	<string name="dashboard_create_task_content_description">Crear tarea</string>
+	<string name="dashboard_delete_task_title">Eliminar tarea</string>
+	<string name="dashboard_delete_task_confirmation">Seguro que quieres eliminar %1$s?</string>
+	<string name="dashboard_task_already_exported_title">Tarea ya exportada</string>
+	<string name="dashboard_task_already_exported_message">Esta tarea ya fue exportada al calendario. Quieres exportarla nuevamente?</string>
+	<string name="dashboard_export_again">Exportar nuevamente</string>
+	<string name="dashboard_export_tasks_title">Exportar tareas</string>
+	<string name="dashboard_bulk_export_count_message">Se exportaran %1$d tareas de %2$s como eventos separados. Deseas continuar?</string>
+	<string name="dashboard_exported_tasks_title">Tareas ya exportadas</string>
+	<string name="dashboard_include_exported_question">Quieres incluir tambien las tareas que ya fueron exportadas anteriormente?</string>
+	<string name="dashboard_include_exported_yes">Si, incluir</string>
+	<string name="dashboard_include_exported_no">No, solo nuevas</string>
+	<string name="dashboard_export_category_content_description">Exportar categoria</string>
+	<string name="dashboard_no_tasks_in_category">Sin tareas en esta categoria</string>
+	<string name="dashboard_date_prefix">Fecha: %1$s</string>
+	<string name="dashboard_remind_prefix">Recordar: %1$s</string>
+	<string name="dashboard_no_date">Sin fecha</string>
+	<string name="dashboard_export_to_calendar_content_description">Exportar al calendario</string>
+	<string name="dashboard_calendar_event_category_label">Categoria: </string>
+
+	<string name="task_category_recurrent">Recurrente</string>
+	<string name="task_category_actionable">Accionable</string>
+	<string name="task_category_short_term">Corto Plazo</string>
+	<string name="task_category_long_term">Largo Plazo</string>
+	<string name="task_category_incubator">Incubadora</string>
+
+	<string name="onboarding_skip">Saltar</string>
+	<string name="onboarding_back">Atras</string>
+	<string name="onboarding_next">Siguiente</string>
+	<string name="onboarding_finish">Finalizar</string>
+	<string name="onboarding_intro_subtitle">El sistema\nGTD perfecto</string>
+	<string name="onboarding_categories_title">Categorias</string>
+	<string name="onboarding_category_recurrent_desc">Tareas diarias. Cada dia recibiras un recordatorio mediante una notificacion.</string>
+	<string name="onboarding_category_actionable_desc">Tareas que podrias hacer ahora mismo y toman menos de 5 minutos.</string>
+	<string name="onboarding_category_short_term_desc">Tareas con fecha limite en menos de una semana. Recibiras un recordatorio un dia antes.</string>
+	<string name="onboarding_category_long_term_desc">Tareas con fecha limite en mas de una semana. Recibiras un recordatorio una semana antes.</string>
+	<string name="onboarding_category_incubator_desc">Tareas con las que no podes avanzar y por eso no tienen fecha limite.</string>
+	<string name="onboarding_features_create_tasks">Crea nuevas\ntareas con\nel boton +</string>
+	<string name="onboarding_features_export_calendar">Exporta tus\ntareas como eventos\npara tu app\nde calendario</string>
+</resources>

@@ -2,6 +2,7 @@ package com.juanignaciolopez.kairos.ui.dashboard
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.res.Configuration
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.ActivityNotFoundException
@@ -11,19 +12,26 @@ import android.provider.CalendarContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
@@ -32,7 +40,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,13 +47,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,12 +65,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.juanignaciolopez.kairos.R
 import com.juanignaciolopez.kairos.core.components.CircleIcon
 import com.juanignaciolopez.kairos.core.utils.DateUtils
 import com.juanignaciolopez.kairos.core.utils.EnumUtils
@@ -88,6 +101,8 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val authState by authViewModel.uiState.collectAsStateWithLifecycle()
     val allTasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val categoryHeaderDividerWidth = if (isLandscape) 112.dp else 175.dp
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingDeleteTask by remember { mutableStateOf<Task?>(null) }
     var pendingExportConfirmationTask by remember { mutableStateOf<Task?>(null) }
@@ -95,7 +110,7 @@ fun DashboardScreen(
     var showBulkExportCountDialog by remember { mutableStateOf(false) }
     var showBulkIncludeExportedDialog by remember { mutableStateOf(false) }
     var pendingBulkExportTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
-    var pendingBulkExportLabel by remember { mutableStateOf("tareas") }
+    var pendingBulkExportLabel by remember { mutableStateOf(context.getString(R.string.dashboard_tasks_label)) }
     var hasRequestedNotificationPermission by rememberSaveable { mutableStateOf(false) }
 
     val activeTasks = allTasks.filter {
@@ -116,7 +131,7 @@ fun DashboardScreen(
 
         if (!allGranted) {
             scope.launch {
-                snackbarHostState.showSnackbar("Se requieren permisos de calendario para exportar tareas")
+                snackbarHostState.showSnackbar(context.getString(R.string.dashboard_calendar_permission_required))
             }
             pendingCalendarExport = null
             return@rememberLauncherForActivityResult
@@ -128,7 +143,7 @@ fun DashboardScreen(
                     viewModel.markTaskExported(request.task.id)
                 } else {
                     scope.launch {
-                        snackbarHostState.showSnackbar("No se pudo abrir una app de calendario")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_calendar_app_not_found))
                     }
                 }
             }
@@ -141,16 +156,20 @@ fun DashboardScreen(
                 )
                 if (result.total == 0) {
                     scope.launch {
-                        snackbarHostState.showSnackbar("No hay tareas para exportar")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_no_tasks_to_export))
                     }
                 } else if (result.exportedCount == 0) {
                     scope.launch {
-                        snackbarHostState.showSnackbar("No se pudo guardar eventos en el calendario")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_calendar_save_failed))
                     }
                 } else {
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            "Se exportaron ${result.exportedCount} de ${result.total} tareas"
+                            context.getString(
+                                R.string.dashboard_exported_count_message,
+                                result.exportedCount,
+                                result.total
+                            )
                         )
                     }
                 }
@@ -159,12 +178,6 @@ fun DashboardScreen(
             null -> Unit
         }
 
-        pendingCalendarExport = null
-    }
-
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {
         hasRequestedNotificationPermission = true
     }
 
@@ -178,7 +191,7 @@ fun DashboardScreen(
                     viewModel.markTaskExported(readyRequest.task.id)
                 } else {
                     scope.launch {
-                        snackbarHostState.showSnackbar("No se pudo abrir una app de calendario")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_calendar_app_not_found))
                     }
                 }
             },
@@ -198,7 +211,7 @@ fun DashboardScreen(
 
         if (tasksToExport.isEmpty()) {
             scope.launch {
-                snackbarHostState.showSnackbar("No hay tareas para exportar con ese filtro")
+                snackbarHostState.showSnackbar(context.getString(R.string.dashboard_no_tasks_for_filter))
             }
             return
         }
@@ -215,12 +228,16 @@ fun DashboardScreen(
                 )
                 scope.launch {
                     if (result.total == 0) {
-                        snackbarHostState.showSnackbar("No hay tareas para exportar")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_no_tasks_to_export))
                     } else if (result.exportedCount == 0) {
-                        snackbarHostState.showSnackbar("No se pudo guardar eventos en el calendario")
+                        snackbarHostState.showSnackbar(context.getString(R.string.dashboard_calendar_save_failed))
                     } else {
                         snackbarHostState.showSnackbar(
-                            "Se exportaron ${result.exportedCount} de ${result.total} tareas"
+                            context.getString(
+                                R.string.dashboard_exported_count_message,
+                                result.exportedCount,
+                                result.total
+                            )
                         )
                     }
                 }
@@ -235,7 +252,7 @@ fun DashboardScreen(
     fun requestBulkExport(tasks: List<Task>, label: String) {
         if (tasks.isEmpty()) {
             scope.launch {
-                snackbarHostState.showSnackbar("No hay tareas para exportar")
+                snackbarHostState.showSnackbar(context.getString(R.string.dashboard_no_tasks_to_export))
             }
             return
         }
@@ -252,6 +269,12 @@ fun DashboardScreen(
         }
     }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        hasRequestedNotificationPermission = true
+    }
+
     LaunchedEffect(Unit) {
         val needsRuntimePermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         val permissionGranted = ContextCompat.checkSelfPermission(
@@ -266,38 +289,78 @@ fun DashboardScreen(
 
     LaunchedEffect(uiState.errorMessage) {
         if (!uiState.errorMessage.isNullOrBlank()) {
-            snackbarHostState.showSnackbar(uiState.errorMessage ?: "Error inesperado")
+            snackbarHostState.showSnackbar(uiState.errorMessage ?: context.getString(R.string.common_unexpected_error))
             viewModel.clearError()
         }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Dashboard GTD", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            requestBulkExport(activeTasks, "todas las tareas")
-                        }
+            if (!isLandscape) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 32.dp),
+                    color = Color(0xFF2A2A2A),
+                    shape = RoundedCornerShape(18.dp),
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Outlined.IosShare, contentDescription = "Exportar todo")
-                    }
-                    IconButton(onClick = onOpenHelp) {
-                        Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "Ayuda")
-                    }
-                    IconButton(onClick = authViewModel::signOut) {
-                        Icon(Icons.AutoMirrored.Outlined.Logout, contentDescription = "Cerrar sesión")
+                        IconButton(
+                            onClick = authViewModel::signOut,
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = stringResource(R.string.dashboard_sign_out_content_description),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        IconButton(
+                            onClick = onOpenHelp,
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = stringResource(R.string.dashboard_help_content_description),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                requestBulkExport(activeTasks, context.getString(R.string.dashboard_all_tasks_label))
+                            },
+                            modifier = Modifier.size(52.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.CalendarMonth,
+                                contentDescription = stringResource(R.string.dashboard_export_all_content_description),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
                     }
                 }
-            )
+            }
         },
         floatingActionButton = {
             CircleIcon(
                 icon = {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = "Crear tarea",
+                        contentDescription = stringResource(R.string.dashboard_create_task_content_description),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 },
@@ -307,34 +370,141 @@ fun DashboardScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            TaskCategory.entries.forEach { category ->
-                item {
-                    CategorySection(
-                        title = EnumUtils.categoryToString(category),
-                        tasks = tasksByCategory[category].orEmpty(),
-                        onEditTask = onEditTask,
-                        onDeleteTask = { pendingDeleteTask = it },
-                        onExportAllTasks = {
-                            requestBulkExport(
-                                tasks = tasksByCategory[category].orEmpty(),
-                                label = "${EnumUtils.categoryToString(category)}"
+        if (isLandscape) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(start = 8.dp, top = 16.dp, bottom = 16.dp)
+                        .width(52.dp),
+                    color = Color(0xFF2A2A2A),
+                    shape = RoundedCornerShape(16.dp),
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        IconButton(
+                            onClick = authViewModel::signOut,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = stringResource(R.string.dashboard_sign_out_content_description),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
                             )
-                        },
-                        onExportTask = { task ->
-                            if (task.isExported) {
-                                pendingExportConfirmationTask = task
-                            } else {
-                                launchSingleTaskExport(task)
-                            }
                         }
-                    )
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        IconButton(
+                            onClick = onOpenHelp,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = stringResource(R.string.dashboard_help_content_description),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                requestBulkExport(activeTasks, context.getString(R.string.dashboard_all_tasks_label))
+                            },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.CalendarMonth,
+                                contentDescription = stringResource(R.string.dashboard_export_all_content_description),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                LazyRow(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    items(TaskCategory.entries) { category ->
+                        CategorySection(
+                            modifier = Modifier
+                                .width(330.dp)
+                                .fillMaxHeight(),
+                            title = EnumUtils.categoryToString(category),
+                            tasks = tasksByCategory[category].orEmpty(),
+                            categoryHeaderDividerWidth = categoryHeaderDividerWidth,
+                            onEditTask = onEditTask,
+                            onDeleteTask = { pendingDeleteTask = it },
+                            onExportAllTasks = {
+                                requestBulkExport(
+                                    tasks = tasksByCategory[category].orEmpty(),
+                                    label = EnumUtils.categoryToString(category)
+                                )
+                            },
+                            onExportTask = { task ->
+                                if (task.isExported) {
+                                    pendingExportConfirmationTask = task
+                                } else {
+                                    launchSingleTaskExport(task)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 140.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                TaskCategory.entries.forEach { category ->
+                    item {
+                        CategorySection(
+                            title = EnumUtils.categoryToString(category),
+                            tasks = tasksByCategory[category].orEmpty(),
+                            categoryHeaderDividerWidth = categoryHeaderDividerWidth,
+                            onEditTask = onEditTask,
+                            onDeleteTask = { pendingDeleteTask = it },
+                            onExportAllTasks = {
+                                requestBulkExport(
+                                    tasks = tasksByCategory[category].orEmpty(),
+                                    label = EnumUtils.categoryToString(category)
+                                )
+                            },
+                            onExportTask = { task ->
+                                if (task.isExported) {
+                                    pendingExportConfirmationTask = task
+                                } else {
+                                    launchSingleTaskExport(task)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -354,9 +524,14 @@ fun DashboardScreen(
     if (pendingDeleteTask != null) {
         AlertDialog(
             onDismissRequest = { pendingDeleteTask = null },
-            title = { Text("Eliminar tarea") },
+            title = { Text(stringResource(R.string.dashboard_delete_task_title)) },
             text = {
-                Text("¿Seguro que quieres eliminar '${pendingDeleteTask?.title.orEmpty()}'?")
+                Text(
+                    stringResource(
+                        R.string.dashboard_delete_task_confirmation,
+                        pendingDeleteTask?.title.orEmpty()
+                    )
+                )
             },
             confirmButton = {
                 TextButton(
@@ -366,12 +541,12 @@ fun DashboardScreen(
                         viewModel.deleteTask(taskId)
                     }
                 ) {
-                    Text("Eliminar")
+                    Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDeleteTask = null }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -380,9 +555,9 @@ fun DashboardScreen(
     if (pendingExportConfirmationTask != null) {
         AlertDialog(
             onDismissRequest = { pendingExportConfirmationTask = null },
-            title = { Text("Tarea ya exportada") },
+            title = { Text(stringResource(R.string.dashboard_task_already_exported_title)) },
             text = {
-                Text("Esta tarea ya fue exportada al calendario. ¿Deseas exportarla nuevamente?")
+                Text(stringResource(R.string.dashboard_task_already_exported_message))
             },
             confirmButton = {
                 TextButton(
@@ -394,12 +569,12 @@ fun DashboardScreen(
                         }
                     }
                 ) {
-                    Text("Exportar nuevamente")
+                    Text(stringResource(R.string.dashboard_export_again))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingExportConfirmationTask = null }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -408,9 +583,15 @@ fun DashboardScreen(
     if (showBulkExportCountDialog) {
         AlertDialog(
             onDismissRequest = { showBulkExportCountDialog = false },
-            title = { Text("Exportar tareas") },
+            title = { Text(stringResource(R.string.dashboard_export_tasks_title)) },
             text = {
-                Text("Se exportarán ${pendingBulkExportTasks.size} tareas de ${pendingBulkExportLabel} como eventos separados. ¿Deseas continuar?")
+                Text(
+                    stringResource(
+                        R.string.dashboard_bulk_export_count_message,
+                        pendingBulkExportTasks.size,
+                        pendingBulkExportLabel
+                    )
+                )
             },
             confirmButton = {
                 TextButton(
@@ -419,12 +600,12 @@ fun DashboardScreen(
                         showBulkIncludeExportedDialog = true
                     }
                 ) {
-                    Text("Continuar")
+                    Text(stringResource(R.string.common_continue))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBulkExportCountDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -433,9 +614,9 @@ fun DashboardScreen(
     if (showBulkIncludeExportedDialog) {
         AlertDialog(
             onDismissRequest = { showBulkIncludeExportedDialog = false },
-            title = { Text("Tareas ya exportadas") },
+            title = { Text(stringResource(R.string.dashboard_exported_tasks_title)) },
             text = {
-                Text("¿Quieres incluir también las tareas que ya fueron exportadas anteriormente?")
+                Text(stringResource(R.string.dashboard_include_exported_question))
             },
             confirmButton = {
                 TextButton(
@@ -447,7 +628,7 @@ fun DashboardScreen(
                         )
                     }
                 ) {
-                    Text("Sí, incluir")
+                    Text(stringResource(R.string.dashboard_include_exported_yes))
                 }
             },
             dismissButton = {
@@ -460,7 +641,7 @@ fun DashboardScreen(
                         )
                     }
                 ) {
-                    Text("No, solo nuevas")
+                    Text(stringResource(R.string.dashboard_include_exported_no))
                 }
             }
         )
@@ -502,26 +683,27 @@ private fun hasCalendarPermissions(context: Context): Boolean {
 
 @Composable
 private fun CategorySection(
+    modifier: Modifier = Modifier,
     title: String,
     tasks: List<Task>,
+    categoryHeaderDividerWidth: Dp,
     onEditTask: (String) -> Unit,
     onDeleteTask: (Task) -> Unit,
     onExportAllTasks: () -> Unit,
     onExportTask: (Task) -> Unit
 ) {
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = CardDefaults.outlinedCardBorder().copy(width = 3.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = if (isLandscape) Modifier.fillMaxHeight() else Modifier
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -531,32 +713,67 @@ private fun CategorySection(
                     color = MaterialTheme.colorScheme.primary
                 )
 
-                IconButton(onClick = onExportAllTasks) {
-                    Icon(
-                        imageVector = Icons.Outlined.IosShare,
-                        contentDescription = "Exportar categoría",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.weight(1f))
 
+                HorizontalDivider(
+                    modifier = Modifier
+                        .size(width = categoryHeaderDividerWidth, height = 3.dp)
+                        .padding(horizontal = 12.dp),
+                    thickness = 3.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                CircleIcon(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Outlined.CalendarMonth,
+                            contentDescription = stringResource(R.string.dashboard_export_category_content_description),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    },
+                    onClick = onExportAllTasks,
+                    hasShadow = false,
+                    size = 52.dp
+                )
+            }
+            Spacer(modifier = Modifier.height(15.dp))
             if (tasks.isEmpty()) {
                 Text(
-                    text = "Sin tareas en esta categoría",
+                    text = stringResource(R.string.dashboard_no_tasks_in_category),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp)
                 )
             } else {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    tasks.forEach { task ->
-                        TaskCard(
-                            task = task,
-                            onEdit = { onEditTask(task.id) },
-                            onDelete = { onDeleteTask(task) },
-                            onExport = { onExportTask(task) }
-                        )
+                if (isLandscape) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = true)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        tasks.forEach { task ->
+                            TaskCard(
+                                task = task,
+                                onEdit = { onEditTask(task.id) },
+                                onDelete = { onDeleteTask(task) },
+                                onExport = { onExportTask(task) }
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        tasks.forEach { task ->
+                            TaskCard(
+                                task = task,
+                                onEdit = { onEditTask(task.id) },
+                                onDelete = { onDeleteTask(task) },
+                                onExport = { onExportTask(task) }
+                            )
+                        }
                     }
                 }
             }
@@ -574,7 +791,7 @@ private fun TaskCard(
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = CardDefaults.outlinedCardBorder().copy(width = 3.dp),
+        border = BorderStroke(width = 3.dp, color = MaterialTheme.colorScheme.primary),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -596,66 +813,61 @@ private fun TaskCard(
                 )
             }
 
-            val dateText = task.dueDate?.let { "Fecha: ${DateUtils.formatDateTime(it)}" }
-                ?: task.scheduledDate?.let { "Recordar: ${DateUtils.formatDateTime(it)}" }
-                ?: "Sin fecha"
+            val dateText = task.dueDate?.let {
+                stringResource(R.string.dashboard_date_prefix, DateUtils.formatDateTime(it))
+            } ?: task.scheduledDate?.let {
+                stringResource(R.string.dashboard_remind_prefix, DateUtils.formatDateTime(it))
+            } ?: stringResource(R.string.dashboard_no_date)
 
-            Text(
-                text = dateText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 2.dp, bottom = 2.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = dateText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Notify: 15:30",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                IconButton(onClick = onDelete, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(64.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Eliminar",
+                        contentDescription = stringResource(R.string.common_delete),
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(52.dp)
                     )
                 }
 
-                IconButton(onClick = onEdit, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(64.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
-                        contentDescription = "Editar",
+                        contentDescription = stringResource(R.string.common_edit),
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(52.dp)
                     )
                 }
 
-                IconButton(onClick = onExport, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = onExport, modifier = Modifier.size(64.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.CalendarMonth,
-                        contentDescription = "Exportar al calendario",
+                        contentDescription = stringResource(R.string.dashboard_export_to_calendar_content_description),
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(52.dp)
                     )
                 }
             }
@@ -667,7 +879,7 @@ private fun exportTaskToCalendar(context: Context, task: Task): Boolean {
     val startMillis = task.dueDate ?: task.scheduledDate ?: System.currentTimeMillis() + 60 * 60 * 1000
     val endMillis = startMillis + maxOf(task.estimatedMinutes, 30) * 60 * 1000L
 
-    val intent = buildCalendarIntentForTask(task, startMillis, endMillis)
+    val intent = buildCalendarIntentForTask(context, task, startMillis, endMillis)
 
     return runCatching {
         context.startActivity(intent)
@@ -753,7 +965,7 @@ private fun insertTaskEventIntoCalendar(
         if (isNotEmpty()) {
             append("\n\n")
         }
-        append("Categoría: ")
+        append(context.getString(R.string.dashboard_calendar_event_category_label))
         append(categoryLabel)
     }
 
@@ -786,7 +998,7 @@ private fun insertTaskEventIntoCalendar(
     }.getOrDefault(false)
 }
 
-private fun buildCalendarIntentForTask(task: Task, startMillis: Long, endMillis: Long): Intent {
+private fun buildCalendarIntentForTask(context: Context, task: Task, startMillis: Long, endMillis: Long): Intent {
     val categoryLabel = EnumUtils.categoryToString(task.category)
     val eventDescription = buildString {
         if (task.description.isNotBlank()) {
@@ -795,7 +1007,7 @@ private fun buildCalendarIntentForTask(task: Task, startMillis: Long, endMillis:
         if (isNotEmpty()) {
             append("\n\n")
         }
-        append("Categoría: ")
+        append(context.getString(R.string.dashboard_calendar_event_category_label))
         append(categoryLabel)
     }
 

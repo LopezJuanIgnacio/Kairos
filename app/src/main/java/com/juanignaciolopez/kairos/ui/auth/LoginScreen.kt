@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -87,14 +88,14 @@ fun LoginScreen(
     ) {
         Icon(
                 painter = painterResource(id = R.drawable.hourglass_half_solid_full),
-                contentDescription = "Kairos",
+                contentDescription = stringResource(R.string.app_name),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(62.dp)
             )
 
 
             Text(
-                text = "Kairos",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 56.sp
@@ -107,11 +108,11 @@ fun LoginScreen(
             value = state.email,
             onValueChange = viewModel::onEmailChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.auth_email_label)) },
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.Email,
-                    contentDescription = "Email",
+                    contentDescription = stringResource(R.string.auth_email_label),
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
@@ -124,12 +125,12 @@ fun LoginScreen(
             value = state.password,
             onValueChange = viewModel::onPasswordChanged,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Password") },
+            label = { Text(stringResource(R.string.auth_password_label)) },
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                     Icon(
                         imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = "Mostrar contraseña",
+                        contentDescription = stringResource(R.string.auth_toggle_password_visibility),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -167,7 +168,7 @@ fun LoginScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Sign In", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.auth_sign_in), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -185,7 +186,7 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(72.dp)
         ) {
-            Text("Register", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.auth_register), fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
         }
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -193,7 +194,7 @@ fun LoginScreen(
         Button(
             onClick = {
                 if (!configuracionGoogleValida) {
-                    viewModel.setError("No se pudo resolver el Web Client ID de Firebase")
+                    viewModel.setError(contexto.getString(R.string.auth_google_web_client_id_error))
                 } else {
                     coroutineScope.launch {
                         runGoogleSignIn(
@@ -228,7 +229,7 @@ fun LoginScreen(
                     Text("G", fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.width(10.dp))
-                Text("Sign In with Google", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.auth_sign_in_with_google), fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -259,18 +260,18 @@ private suspend fun runGoogleSignIn(
 
         val customCredential = result.credential as? CustomCredential
         if (customCredential == null || customCredential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            onError("No se pudo obtener la credencial de Google")
+            onError(context.getString(R.string.auth_google_credential_error))
             return
         }
 
         val googleCredential = GoogleIdTokenCredential.createFrom(customCredential.data)
         onToken(googleCredential.idToken)
     } catch (_: NoCredentialException) {
-        onError("No hay una cuenta de Google disponible en este dispositivo")
+        onError(context.getString(R.string.auth_google_no_account_error))
     } catch (e: GetCredentialException) {
-        onError(e.message ?: "No se pudo iniciar Google Sign-In")
+        onError(e.message ?: context.getString(R.string.auth_google_sign_in_error))
     } catch (e: Exception) {
-        onError(e.message ?: "No se pudo iniciar Google Sign-In")
+        onError(e.message ?: context.getString(R.string.auth_google_sign_in_error))
     }
 }
 

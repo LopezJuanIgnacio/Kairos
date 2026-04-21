@@ -1,4 +1,84 @@
 <resources>
-    <string name="app_name">Kairos</string>
-    <string name="google_web_client_id">580508677289-a71de343hghorirbi688pg60eodm7rnr.apps.googleusercontent.com</string>
+    <string name="app_name" translatable="false">Kairos</string>
+    <string name="google_web_client_id" translatable="false">580508677289-a71de343hghorirbi688pg60eodm7rnr.apps.googleusercontent.com</string>
+
+    <string name="common_save">Save</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_edit">Edit</string>
+    <string name="common_continue">Continue</string>
+    <string name="common_category">Category</string>
+    <string name="common_unexpected_error">Unexpected error</string>
+
+    <string name="auth_email_label">Email</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_toggle_password_visibility">Toggle password visibility</string>
+    <string name="auth_sign_in">Sign In</string>
+    <string name="auth_register">Register</string>
+    <string name="auth_sign_in_with_google">Sign In with Google</string>
+    <string name="auth_first_name_label">First name</string>
+    <string name="auth_last_name_label">Last name</string>
+    <string name="auth_go_back">Go Back</string>
+    <string name="auth_google_web_client_id_error">Firebase Web Client ID could not be resolved</string>
+    <string name="auth_google_credential_error">Google credential could not be obtained</string>
+    <string name="auth_google_no_account_error">No Google account is available on this device</string>
+    <string name="auth_google_sign_in_error">Google Sign-In could not be started</string>
+
+    <string name="task_form_title_label">Title</string>
+    <string name="task_form_title_placeholder">e.g. Prepare presentation</string>
+    <string name="task_form_description_label">Description</string>
+    <string name="task_form_description_placeholder">Task details</string>
+    <string name="task_form_due_date_label">Due date and time</string>
+    <string name="task_form_due_date_placeholder">Select due date and time</string>
+
+    <string name="dashboard_tasks_label">tasks</string>
+    <string name="dashboard_all_tasks_label">all tasks</string>
+    <string name="dashboard_calendar_permission_required">Calendar permissions are required to export tasks</string>
+    <string name="dashboard_calendar_app_not_found">No calendar app could be opened</string>
+    <string name="dashboard_no_tasks_to_export">No tasks to export</string>
+    <string name="dashboard_calendar_save_failed">Events could not be saved to the calendar</string>
+    <string name="dashboard_exported_count_message">Exported %1$d of %2$d tasks</string>
+    <string name="dashboard_no_tasks_for_filter">No tasks to export with that filter</string>
+    <string name="dashboard_sign_out_content_description">Sign out</string>
+    <string name="dashboard_help_content_description">Help</string>
+    <string name="dashboard_export_all_content_description">Export all</string>
+    <string name="dashboard_create_task_content_description">Create task</string>
+    <string name="dashboard_delete_task_title">Delete task</string>
+    <string name="dashboard_delete_task_confirmation">Are you sure you want to delete %1$s?</string>
+    <string name="dashboard_task_already_exported_title">Task already exported</string>
+    <string name="dashboard_task_already_exported_message">This task was already exported to the calendar. Do you want to export it again?</string>
+    <string name="dashboard_export_again">Export again</string>
+    <string name="dashboard_export_tasks_title">Export tasks</string>
+    <string name="dashboard_bulk_export_count_message">%1$d tasks from %2$s will be exported as separate events. Do you want to continue?</string>
+    <string name="dashboard_exported_tasks_title">Already exported tasks</string>
+    <string name="dashboard_include_exported_question">Do you want to also include tasks that were already exported before?</string>
+    <string name="dashboard_include_exported_yes">Yes, include</string>
+    <string name="dashboard_include_exported_no">No, only new</string>
+    <string name="dashboard_export_category_content_description">Export category</string>
+    <string name="dashboard_no_tasks_in_category">No tasks in this category</string>
+    <string name="dashboard_date_prefix">Date: %1$s</string>
+    <string name="dashboard_remind_prefix">Remind: %1$s</string>
+    <string name="dashboard_no_date">No date</string>
+    <string name="dashboard_export_to_calendar_content_description">Export to calendar</string>
+    <string name="dashboard_calendar_event_category_label">Category: </string>
+
+    <string name="task_category_recurrent">Recurrent</string>
+    <string name="task_category_actionable">Actionable</string>
+    <string name="task_category_short_term">Short Term</string>
+    <string name="task_category_long_term">Long Term</string>
+    <string name="task_category_incubator">Incubator</string>
+
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_finish">Finish</string>
+    <string name="onboarding_intro_subtitle">The perfect\nGTD System</string>
+    <string name="onboarding_categories_title">Categories</string>
+    <string name="onboarding_category_recurrent_desc">Daily tasks. Every day you will be reminded of them by a notification.</string>
+    <string name="onboarding_category_actionable_desc">Tasks that you could do right now and take under 5 minutes.</string>
+    <string name="onboarding_category_short_term_desc">Tasks with a deadline in less than a week. You will be reminded of them a day earlier.</string>
+    <string name="onboarding_category_long_term_desc">Tasks with a deadline in more than a week. You will be reminded of them a week earlier.</string>
+    <string name="onboarding_category_incubator_desc">Tasks that you cannot proceed with and therefore do not have a deadline.</string>
+    <string name="onboarding_features_create_tasks">Create new\ntasks with with\nthe plus button</string>
+    <string name="onboarding_features_export_calendar">Export your\ntasks as events\nfor your\ncalendar app</string>
 </resources>
