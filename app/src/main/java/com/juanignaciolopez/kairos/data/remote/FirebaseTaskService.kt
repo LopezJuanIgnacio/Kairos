@@ -1,6 +1,7 @@
 package com.juanignaciolopez.kairos.data.remote
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.toObject
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.Task
@@ -60,7 +61,7 @@ class FirebaseTaskService(
             Result.Success(it)
         } ?: Result.Error("Tarea no encontrada")
     } catch (e: Exception) {
-        Result.Error("Error al obtener tarea: ${e.message}", e)
+        Result.Error("Error al obtener tarea: ${firestoreErrorMessage(e)}", e)
     }
 
     suspend fun createTask(idUsuario: String, tarea: Task): Result<Task> = try {
@@ -75,7 +76,7 @@ class FirebaseTaskService(
             .await()
         Result.Success(tareaConUsuario)
     } catch (e: Exception) {
-        Result.Error("Error al crear tarea: ${e.message}", e)
+        Result.Error("Error al crear tarea: ${firestoreErrorMessage(e)}", e)
     }
 
     suspend fun updateTask(idUsuario: String, tarea: Task): Result<Task> = try {
@@ -89,7 +90,7 @@ class FirebaseTaskService(
             .await()
         Result.Success(tarea)
     } catch (e: Exception) {
-        Result.Error("Error al actualizar tarea: ${e.message}", e)
+        Result.Error("Error al actualizar tarea: ${firestoreErrorMessage(e)}", e)
     }
 
     suspend fun deleteTask(idUsuario: String, idTarea: String): Result<Unit> = try {
@@ -103,7 +104,14 @@ class FirebaseTaskService(
             .await()
         Result.Success(Unit)
     } catch (e: Exception) {
-        Result.Error("Error al eliminar tarea: ${e.message}", e)
+        Result.Error("Error al eliminar tarea: ${firestoreErrorMessage(e)}", e)
+    }
+
+    private fun firestoreErrorMessage(error: Exception): String {
+        val firestoreError = error as? FirebaseFirestoreException
+        val code = firestoreError?.code?.name
+        val message = error.message ?: "Sin detalle"
+        return if (code.isNullOrBlank()) message else "[$code] $message"
     }
 
     private fun taskFromDocument(documento: com.google.firebase.firestore.DocumentSnapshot): Task? {

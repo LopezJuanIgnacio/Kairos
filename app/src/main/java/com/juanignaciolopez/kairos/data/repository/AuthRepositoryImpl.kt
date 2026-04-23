@@ -4,6 +4,7 @@ import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.User
 import com.juanignaciolopez.kairos.data.remote.FirebaseAuthService
 import com.juanignaciolopez.kairos.domain.repository.AuthRepository
+import kotlinx.coroutines.flow.Flow
 
 class AuthRepositoryImpl(
     private val servicioFirebaseAutenticacion: FirebaseAuthService
@@ -38,6 +39,10 @@ class AuthRepositoryImpl(
 
     override fun getCurrentUserId(): String? {
         return servicioFirebaseAutenticacion.getCurrentUserId()
+    }
+
+    override fun observeCurrentUser(): Flow<User?> {
+        return servicioFirebaseAutenticacion.observeCurrentUser()
     }
 
     override suspend fun isUserAuthenticated(): Boolean {

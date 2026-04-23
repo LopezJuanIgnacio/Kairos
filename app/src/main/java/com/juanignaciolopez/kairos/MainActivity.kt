@@ -3,6 +3,7 @@ package com.juanignaciolopez.kairos
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,7 +32,10 @@ class MainActivity : ComponentActivity() {
     lateinit var authRepository: AuthRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        setTheme(R.style.Theme_Kairos)
         super.onCreate(savedInstanceState)
+
         setContent {
             KairosTheme {
                 // Una superficie usando el color de fondo predeterminado del tema

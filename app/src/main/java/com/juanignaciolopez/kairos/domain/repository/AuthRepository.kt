@@ -2,6 +2,7 @@ package com.juanignaciolopez.kairos.domain.repository
 
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.User
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Contrato de dominio para autenticación.
@@ -25,6 +26,8 @@ interface AuthRepository {
     suspend fun sendPasswordReset(email: String): Result<Unit>
 
     fun getCurrentUserId(): String?
+
+    fun observeCurrentUser(): Flow<User?>
 
     suspend fun isUserAuthenticated(): Boolean
 }

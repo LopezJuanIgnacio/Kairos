@@ -16,17 +16,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 @HiltViewModel
 class TaskFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    authRepository: AuthRepository,
+    private val authRepository: AuthRepository,
     private val taskRepository: TaskRepository
 ) : ViewModel() {
 
-    private val userId: String = authRepository.getCurrentUserId().orEmpty()
     private val taskIdArg: String? = savedStateHandle[NavRoute.TASK_ID_ARG]
 
     private val _uiState = MutableStateFlow(TaskFormUiState(taskId = taskIdArg))
@@ -126,6 +126,7 @@ class TaskFormViewModel @Inject constructor(
 
         val now = System.currentTimeMillis()
         val existingTask = loadedTask
+        val currentUserId = currentUserId()
         val task = if (current.isEditMode && existingTask != null) {
             existingTask.copy(
                 title = title,
@@ -133,12 +134,12 @@ class TaskFormViewModel @Inject constructor(
                 category = current.category,
                 dueDate = current.dueDate,
                 updatedAt = now,
-                userId = if (existingTask.userId.isBlank()) userId else existingTask.userId
+                userId = if (existingTask.userId.isBlank()) currentUserId else existingTask.userId
             )
         } else {
             Task(
                 id = current.taskId ?: java.util.UUID.randomUUID().toString(),
-                userId = userId,
+                userId = currentUserId,
                 title = title,
                 description = description,
                 category = current.category,
@@ -150,15 +151,8 @@ class TaskFormViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-
             try {
-                val result = withTimeout(SAVE_TIMEOUT_MS) {
-                    if (current.isEditMode) {
-                        taskRepository.updateTask(task)
-                    } else {
-                        taskRepository.createTask(task)
-                    }
-                }
+                val result = executeSaveWithRetry(task = task, isEditMode = current.isEditMode)
 
                 when (result) {
                     is Result.Success -> _uiState.update {
@@ -194,7 +188,7 @@ class TaskFormViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
-            when (val result = taskRepository.getTaskById(taskId)) {
+            when (val result = executeLoadWithRetry(taskId)) {
                 is Result.Success -> {
                     val task = result.data
                     loadedTask = task
@@ -219,7 +213,60 @@ class TaskFormViewModel @Inject constructor(
         }
     }
 
+    private suspend fun executeLoadWithRetry(taskId: String): Result<Task> {
+        repeat(MAX_LOAD_ATTEMPTS) { attempt ->
+            try {
+                val result = withTimeout(LOAD_ATTEMPT_TIMEOUT_MS) {
+                    taskRepository.getTaskById(taskId)
+                }
+
+                return result
+            } catch (_: TimeoutCancellationException) {
+                val isLastAttempt = attempt == MAX_LOAD_ATTEMPTS - 1
+                if (isLastAttempt) {
+                    return Result.Error(
+                        "No se pudo cargar la tarea a tiempo. Verifica la conexión e intenta de nuevo."
+                    )
+                }
+            }
+        }
+
+        return Result.Error("No se pudo cargar la tarea.")
+    }
+
+    private fun currentUserId(): String {
+        return authRepository.getCurrentUserId().orEmpty()
+    }
+
+    private suspend fun executeSaveWithRetry(task: Task, isEditMode: Boolean): Result<Task> {
+        repeat(MAX_SAVE_ATTEMPTS) { attempt ->
+            try {
+                val result = withTimeout(SAVE_ATTEMPT_TIMEOUT_MS) {
+                    if (isEditMode) {
+                        taskRepository.updateTask(task)
+                    } else {
+                        taskRepository.createTask(task)
+                    }
+                }
+
+                return result
+            } catch (_: TimeoutCancellationException) {
+                val isLastAttempt = attempt == MAX_SAVE_ATTEMPTS - 1
+                if (isLastAttempt) {
+                    return Result.Error(
+                        "No se pudo confirmar el guardado a tiempo. Revisa tu conexión e intenta nuevamente."
+                    )
+                }
+            }
+        }
+
+        return Result.Error("No se pudo guardar la tarea.")
+    }
+
     companion object {
-        private const val SAVE_TIMEOUT_MS = 15_000L
+        private const val SAVE_ATTEMPT_TIMEOUT_MS = 12_000L
+        private const val MAX_SAVE_ATTEMPTS = 2
+        private const val LOAD_ATTEMPT_TIMEOUT_MS = 10_000L
+        private const val MAX_LOAD_ATTEMPTS = 2
     }
 }
