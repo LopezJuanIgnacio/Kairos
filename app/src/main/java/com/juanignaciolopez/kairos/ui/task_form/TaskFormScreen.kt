@@ -131,6 +131,7 @@ fun TaskFormScreen(
             )
 
             DueDateField(
+                category = uiState.category,
                 dueDate = uiState.dueDate,
                 dueDateError = uiState.dueDateError,
                 onSelectDateTime = viewModel::onDueDateChanged
@@ -223,6 +224,7 @@ private fun CategoryDropdown(
 
 @Composable
 private fun DueDateField(
+    category: TaskCategory,
     dueDate: Long?,
     dueDateError: String?,
     onSelectDateTime: (Long?) -> Unit
@@ -273,6 +275,44 @@ private fun DueDateField(
         ).show()
     }
 
+    val openTimeOnlyPicker = {
+        val baseCalendar = Calendar.getInstance().apply {
+            if (dueDate != null) {
+                timeInMillis = dueDate
+            }
+        }
+
+        TimePickerDialog(
+            context,
+            { _, hourOfDay, minute ->
+                val selectedCalendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hourOfDay)
+                    set(Calendar.MINUTE, minute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                onSelectDateTime(selectedCalendar.timeInMillis)
+            },
+            baseCalendar.get(Calendar.HOUR_OF_DAY),
+            baseCalendar.get(Calendar.MINUTE),
+            false
+        ).show()
+    }
+
+    val isDailyCategory = category == TaskCategory.RECURRENT || category == TaskCategory.ACTIONABLE
+    val currentValue = when {
+        dueDate == null -> stringResource(
+            if (isDailyCategory) R.string.task_form_notification_time_placeholder
+            else R.string.task_form_due_date_placeholder
+        )
+        isDailyCategory -> DateUtils.formatTime(dueDate)
+        else -> DateUtils.formatDateTime(dueDate)
+    }
+    val fieldLabel = stringResource(
+        if (isDailyCategory) R.string.task_form_notification_time_label
+        else R.string.task_form_due_date_label
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(
             modifier = Modifier
@@ -280,15 +320,14 @@ private fun DueDateField(
                 .clickable(
                     interactionSource = pickerInteractionSource,
                     indication = null,
-                    onClick = openDateTimePicker
+                    onClick = if (isDailyCategory) openTimeOnlyPicker else openDateTimePicker
                 )
         ) {
             OutlinedTextField(
-                value = dueDate?.let(DateUtils::formatDateTime)
-                    ?: stringResource(R.string.task_form_due_date_placeholder),
+                value = currentValue,
                 onValueChange = {},
                 enabled = false,
-                label = { Text(stringResource(R.string.task_form_due_date_label)) },
+                label = { Text(fieldLabel) },
                 isError = dueDateError != null,
                 colors = OutlinedTextFieldDefaults.colors(
                     disabledTextColor = MaterialTheme.colorScheme.onSurface,

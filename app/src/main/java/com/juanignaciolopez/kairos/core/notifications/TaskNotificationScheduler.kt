@@ -61,7 +61,7 @@ object TaskNotificationScheduler {
 
     private fun scheduleDailyNotification(workManager: WorkManager, task: Task) {
         val request = PeriodicWorkRequestBuilder<TaskNotificationWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(delayUntilNextDailyReminderMillis(), TimeUnit.MILLISECONDS)
+            .setInitialDelay(delayUntilNextDailyReminderMillis(task.dueDate), TimeUnit.MILLISECONDS)
             .setInputData(TaskNotificationWorker.inputData(task.id, task.title, task.category))
             .addTag(tagForTask(task.id))
             .build()
@@ -116,12 +116,19 @@ object TaskNotificationScheduler {
         workManager.cancelUniqueWork(leadWorkName(taskId, 7))
     }
 
-    private fun delayUntilNextDailyReminderMillis(): Long {
+    private fun delayUntilNextDailyReminderMillis(reminderAt: Long?): Long {
         val now = Calendar.getInstance()
         val next = Calendar.getInstance().apply {
             timeInMillis = now.timeInMillis
-            set(Calendar.HOUR_OF_DAY, 9)
-            set(Calendar.MINUTE, 0)
+
+            val reminderCalendar = Calendar.getInstance().apply {
+                if (reminderAt != null) {
+                    timeInMillis = reminderAt
+                }
+            }
+
+            set(Calendar.HOUR_OF_DAY, reminderCalendar.get(Calendar.HOUR_OF_DAY))
+            set(Calendar.MINUTE, reminderCalendar.get(Calendar.MINUTE))
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
             if (before(now)) {

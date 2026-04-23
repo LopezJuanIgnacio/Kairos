@@ -8,7 +8,6 @@ import com.juanignaciolopez.kairos.core.utils.ValidationUtils
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.Task
 import com.juanignaciolopez.kairos.data.models.TaskCategory
-import com.juanignaciolopez.kairos.data.models.TaskStatus
 import com.juanignaciolopez.kairos.domain.repository.AuthRepository
 import com.juanignaciolopez.kairos.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -104,7 +103,12 @@ class TaskFormViewModel @Inject constructor(
         }
 
         val dueDateError = if (current.dueDate == null) {
-            "La fecha límite es obligatoria"
+            when (current.category) {
+                TaskCategory.RECURRENT,
+                TaskCategory.ACTIONABLE -> "La hora de notificación es obligatoria"
+
+                else -> "La fecha límite es obligatoria"
+            }
         } else {
             null
         }
@@ -139,7 +143,6 @@ class TaskFormViewModel @Inject constructor(
                 description = description,
                 category = current.category,
                 dueDate = current.dueDate,
-                status = TaskStatus.INBOX,
                 createdAt = now,
                 updatedAt = now
             )

@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -44,6 +45,10 @@ class TaskNotificationWorker(
 
         val notificationId = taskId.hashCode()
         val contentText = categoryReminderText(category)
+        val launcherBitmap = BitmapFactory.decodeResource(
+            applicationContext.resources,
+            R.mipmap.ic_launcher_round
+        )
 
         val openAppIntent = Intent(applicationContext, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -57,7 +62,8 @@ class TaskNotificationWorker(
         )
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setLargeIcon(launcherBitmap)
             .setContentTitle(title)
             .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -69,13 +75,14 @@ class TaskNotificationWorker(
         NotificationManagerCompat.from(applicationContext).notify(notificationId, notification)
 
         val summaryNotification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Recordatorios Kairos")
-            .setContentText("Tienes tareas con recordatorio")
+            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setLargeIcon(launcherBitmap)
+            .setContentTitle(applicationContext.getString(R.string.notification_summary_title))
+            .setContentText(applicationContext.getString(R.string.notification_summary_text))
             .setStyle(
                 NotificationCompat.InboxStyle()
                     .addLine(title)
-                    .setSummaryText("Revisa tus tareas")
+                    .setSummaryText(applicationContext.getString(R.string.notification_summary_inbox_text))
             )
             .setGroup(GROUP_KEY)
             .setGroupSummary(true)
@@ -89,11 +96,11 @@ class TaskNotificationWorker(
 
     private fun categoryReminderText(category: TaskCategory): String = when (category) {
         TaskCategory.RECURRENT,
-        TaskCategory.ACTIONABLE -> "Recordatorio diario"
+        TaskCategory.ACTIONABLE -> applicationContext.getString(R.string.notification_reminder_daily)
 
-        TaskCategory.SHORT_TERM -> "Recordatorio: vence en 1 día"
-        TaskCategory.LONG_TERM -> "Recordatorio: vence en 1 semana"
-        TaskCategory.INCUBATOR -> "Revisa esta tarea"
+        TaskCategory.SHORT_TERM -> applicationContext.getString(R.string.notification_reminder_short_term)
+        TaskCategory.LONG_TERM -> applicationContext.getString(R.string.notification_reminder_long_term)
+        TaskCategory.INCUBATOR -> applicationContext.getString(R.string.notification_reminder_incubator)
     }
 
     private fun ensureNotificationChannel(context: Context) {
@@ -105,10 +112,10 @@ class TaskNotificationWorker(
 
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Recordatorios de tareas",
+            context.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Notificaciones programadas de tareas Kairos"
+            description = context.getString(R.string.notification_channel_description)
         }
         manager.createNotificationChannel(channel)
     }

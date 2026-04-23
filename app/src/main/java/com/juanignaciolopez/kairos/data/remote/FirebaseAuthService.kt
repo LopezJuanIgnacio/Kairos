@@ -5,6 +5,9 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.User
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -13,6 +16,31 @@ import kotlinx.coroutines.tasks.await
 class FirebaseAuthService(
     private val firebaseAuth: FirebaseAuth?
 ) {
+    fun observeCurrentUser(): Flow<User?> = callbackFlow {
+        val auth = firebaseAuth
+        if (auth == null) {
+            trySend(null)
+            close()
+            return@callbackFlow
+        }
+
+        val listener = FirebaseAuth.AuthStateListener { state ->
+            val user = state.currentUser?.let {
+                User(
+                    id = it.uid,
+                    email = it.email ?: "",
+                    displayName = it.displayName ?: "Usuario",
+                    photoUrl = it.photoUrl?.toString(),
+                    emailVerified = it.isEmailVerified
+                )
+            }
+            trySend(user)
+        }
+
+        auth.addAuthStateListener(listener)
+        awaitClose { auth.removeAuthStateListener(listener) }
+    }
+
     suspend fun signUp(
         correo: String,
         contraseña: String,
@@ -33,7 +61,6 @@ class FirebaseAuthService(
                 email = it.email ?: correo,
                 displayName = nombreMostrado,
                 photoUrl = it.photoUrl?.toString(),
-                createdAt = System.currentTimeMillis(),
                 emailVerified = it.isEmailVerified
             )
             Result.Success(usuario)
@@ -101,18 +128,6 @@ class FirebaseAuthService(
     }
 
     fun getCurrentUserId(): String? = firebaseAuth?.currentUser?.uid
-
-    fun getCurrentUser(): User? {
-        return firebaseAuth?.currentUser?.let {
-            User(
-                id = it.uid,
-                email = it.email ?: "",
-                displayName = it.displayName ?: "Usuario",
-                photoUrl = it.photoUrl?.toString(),
-                emailVerified = it.isEmailVerified
-            )
-        }
-    }
 
     fun isUserAuthenticated(): Boolean = firebaseAuth?.currentUser != null
 }

@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.juanignaciolopez.kairos.core.notifications.TaskNotificationScheduler
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.Task
-import com.juanignaciolopez.kairos.data.models.TaskStatus
 import com.juanignaciolopez.kairos.domain.repository.AuthRepository
 import com.juanignaciolopez.kairos.domain.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,12 +52,7 @@ class DashboardViewModel @Inject constructor(
         if (userId.isNotBlank()) {
             viewModelScope.launch {
                 taskRepository.getAllTasks(userId).collectLatest { allTasks ->
-                    val activeTasks = allTasks.filter {
-                        it.status != TaskStatus.COMPLETED &&
-                            it.status != TaskStatus.ARCHIVED &&
-                            it.status != TaskStatus.DELETED
-                    }
-                    TaskNotificationScheduler.syncNotifications(appContext, activeTasks)
+                    TaskNotificationScheduler.syncNotifications(appContext, allTasks)
                 }
             }
         }

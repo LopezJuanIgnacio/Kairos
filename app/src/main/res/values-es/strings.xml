@@ -28,6 +28,8 @@
 	<string name="task_form_description_placeholder">Detalles de la tarea</string>
 	<string name="task_form_due_date_label">Fecha y hora limite</string>
 	<string name="task_form_due_date_placeholder">Seleccionar fecha y hora limite</string>
+	<string name="task_form_notification_time_label">Hora de notificacion diaria</string>
+	<string name="task_form_notification_time_placeholder">Seleccionar hora de notificacion diaria</string>
 
 	<string name="dashboard_tasks_label">tareas</string>
 	<string name="dashboard_all_tasks_label">todas las tareas</string>
@@ -56,9 +58,20 @@
 	<string name="dashboard_no_tasks_in_category">Sin tareas en esta categoria</string>
 	<string name="dashboard_date_prefix">Fecha: %1$s</string>
 	<string name="dashboard_remind_prefix">Recordar: %1$s</string>
+	<string name="dashboard_daily_time_prefix">Recordatorio diario: %1$s</string>
 	<string name="dashboard_no_date">Sin fecha</string>
 	<string name="dashboard_export_to_calendar_content_description">Exportar al calendario</string>
 	<string name="dashboard_calendar_event_category_label">Categoria: </string>
+
+	<string name="notification_summary_title">Recordatorios Kairos</string>
+	<string name="notification_summary_text">Tienes tareas con recordatorio</string>
+	<string name="notification_summary_inbox_text">Revisa tus tareas</string>
+	<string name="notification_reminder_daily">Recordatorio diario</string>
+	<string name="notification_reminder_short_term">Recordatorio: vence en 1 dia</string>
+	<string name="notification_reminder_long_term">Recordatorio: vence en 1 semana</string>
+	<string name="notification_reminder_incubator">Revisa esta tarea</string>
+	<string name="notification_channel_name">Recordatorios de tareas</string>
+	<string name="notification_channel_description">Notificaciones programadas de tareas Kairos</string>
 
 	<string name="task_category_recurrent">Recurrente</string>
 	<string name="task_category_actionable">Accionable</string>

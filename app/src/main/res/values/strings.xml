@@ -30,6 +30,8 @@
     <string name="task_form_description_placeholder">Task details</string>
     <string name="task_form_due_date_label">Due date and time</string>
     <string name="task_form_due_date_placeholder">Select due date and time</string>
+    <string name="task_form_notification_time_label">Daily notification time</string>
+    <string name="task_form_notification_time_placeholder">Select daily notification time</string>
 
     <string name="dashboard_tasks_label">tasks</string>
     <string name="dashboard_all_tasks_label">all tasks</string>
@@ -58,9 +60,20 @@
     <string name="dashboard_no_tasks_in_category">No tasks in this category</string>
     <string name="dashboard_date_prefix">Date: %1$s</string>
     <string name="dashboard_remind_prefix">Remind: %1$s</string>
+    <string name="dashboard_daily_time_prefix">Daily reminder: %1$s</string>
     <string name="dashboard_no_date">No date</string>
     <string name="dashboard_export_to_calendar_content_description">Export to calendar</string>
     <string name="dashboard_calendar_event_category_label">Category: </string>
+
+    <string name="notification_summary_title">Kairos reminders</string>
+    <string name="notification_summary_text">You have tasks with reminders</string>
+    <string name="notification_summary_inbox_text">Check your tasks</string>
+    <string name="notification_reminder_daily">Daily reminder</string>
+    <string name="notification_reminder_short_term">Reminder: due in 1 day</string>
+    <string name="notification_reminder_long_term">Reminder: due in 1 week</string>
+    <string name="notification_reminder_incubator">Review this task</string>
+    <string name="notification_channel_name">Task reminders</string>
+    <string name="notification_channel_description">Scheduled notifications for Kairos tasks</string>
 
     <string name="task_category_recurrent">Recurrent</string>
     <string name="task_category_actionable">Actionable</string>

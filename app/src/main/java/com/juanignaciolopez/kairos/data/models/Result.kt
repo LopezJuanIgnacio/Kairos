@@ -27,26 +27,3 @@ sealed class Result<out T> {
         else -> null
     }
 }
-
-// Alias de transición para nombres en español.
-typealias Resultado<T> = Result<T>
-
-inline fun <T, R> Resultado<T>.mapear(transformar: (T) -> R): Resultado<R> = when (this) {
-    is Result.Success -> Result.Success(transformar(data))
-    is Result.Error -> this
-    is Result.Loading -> this
-}
-
-inline fun <T> Resultado<T>.alExito(accion: (T) -> Unit): Resultado<T> {
-    if (this is Result.Success) {
-        accion(data)
-    }
-    return this
-}
-
-inline fun <T> Resultado<T>.alError(accion: (String, Exception?) -> Unit): Resultado<T> {
-    if (this is Result.Error) {
-        accion(message, exception)
-    }
-    return this
-}

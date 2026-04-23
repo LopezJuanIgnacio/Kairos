@@ -1,13 +1,10 @@
 package com.juanignaciolopez.kairos.data.remote
 
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.toObject
 import com.juanignaciolopez.kairos.data.models.Result
 import com.juanignaciolopez.kairos.data.models.Task
 import com.juanignaciolopez.kairos.data.models.TaskCategory
-import com.juanignaciolopez.kairos.data.models.TaskPriority
-import com.juanignaciolopez.kairos.data.models.TaskStatus
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -36,30 +33,6 @@ class FirebaseTaskService(
             .document(idUsuario)
             .collection(TASKS_COLLECTION)
             .orderBy("createdAt")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                } else {
-                    val tareas = snapshot?.documents?.mapNotNull { doc ->
-                        taskFromDocument(doc)
-                    } ?: emptyList()
-                    trySend(tareas)
-                }
-            }
-        awaitClose { suscripcion.remove() }
-    }
-
-    fun getTasksByStatus(idUsuario: String, estado: TaskStatus): Flow<List<Task>> = callbackFlow {
-        val base = firestore
-        if (base == null) {
-            close(IllegalStateException("Firestore no está configurado"))
-            return@callbackFlow
-        }
-        val suscripcion = base
-            .collection(USERS_COLLECTION)
-            .document(idUsuario)
-            .collection(TASKS_COLLECTION)
-            .whereEqualTo("status", estado)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -133,23 +106,6 @@ class FirebaseTaskService(
         Result.Error("Error al eliminar tarea: ${e.message}", e)
     }
 
-    suspend fun completeTask(idUsuario: String, idTarea: String): Result<Unit> = try {
-        val base = firestore ?: return Result.Error("Firestore no está configurado")
-        base
-            .collection(USERS_COLLECTION)
-            .document(idUsuario)
-            .collection(TASKS_COLLECTION)
-            .document(idTarea)
-            .update(
-                "status", TaskStatus.COMPLETED,
-                "completedAt", System.currentTimeMillis()
-            )
-            .await()
-        Result.Success(Unit)
-    } catch (e: Exception) {
-        Result.Error("Error al completar tarea: ${e.message}", e)
-    }
-
     private fun taskFromDocument(documento: com.google.firebase.firestore.DocumentSnapshot): Task? {
         val directo = runCatching { documento.toObject<Task>() }.getOrNull()
         if (directo != null) return directo
@@ -166,53 +122,15 @@ class FirebaseTaskService(
             userId = data["userId"]?.toString().orEmpty(),
             title = data["title"]?.toString().orEmpty(),
             description = data["description"]?.toString().orEmpty(),
-            status = parseStatus(data["status"]),
-            priority = parsePriority(data["priority"]),
             category = parseCategory(data["category"]),
             createdAt = parseLong(data["createdAt"]) ?: System.currentTimeMillis(),
             updatedAt = parseLong(data["updatedAt"]) ?: System.currentTimeMillis(),
             scheduledDate = parseLong(data["scheduledDate"]),
             dueDate = parseLong(data["dueDate"]),
-            completedAt = parseLong(data["completedAt"]),
-            isRecurring = parseBoolean(data["isRecurring"]),
-            recurrencePattern = data["recurrencePattern"]?.toString(),
-            parentTaskId = data["parentTaskId"]?.toString(),
             estimatedMinutes = parseInt(data["estimatedMinutes"]),
-            context = data["context"]?.toString().orEmpty(),
-            project = data["project"]?.toString(),
             isNextAction = parseBoolean(data["isNextAction"]),
-            isSaved = parseBoolean(data["isSaved"]),
-            isExported = parseBoolean(data["isExported"]),
-            isSyncPending = parseBoolean(data["isSyncPending"]),
-            lastSyncedAt = parseLong(data["lastSyncedAt"]),
-            tags = parseTags(data["tags"])
+            isExported = parseBoolean(data["isExported"])
         )
-    }
-
-    private fun parseStatus(raw: Any?): TaskStatus {
-        val value = raw?.toString()?.trim().orEmpty().uppercase()
-        return when (value) {
-            "INBOX" -> TaskStatus.INBOX
-            "PROCESSING" -> TaskStatus.PROCESSING
-            "TODO" -> TaskStatus.TODO
-            "IN_PROGRESS" -> TaskStatus.IN_PROGRESS
-            "COMPLETED" -> TaskStatus.COMPLETED
-            "ARCHIVED" -> TaskStatus.ARCHIVED
-            "DELETED" -> TaskStatus.DELETED
-            else -> TaskStatus.INBOX
-        }
-    }
-
-    private fun parsePriority(raw: Any?): TaskPriority {
-        val value = raw?.toString()?.trim().orEmpty().uppercase()
-        return when (value) {
-            "VERY_HIGH", "CRITICA", "CRÍTICA" -> TaskPriority.VERY_HIGH
-            "HIGH", "ALTA" -> TaskPriority.HIGH
-            "NORMAL" -> TaskPriority.NORMAL
-            "LOW", "BAJA" -> TaskPriority.LOW
-            "VERY_LOW", "MUY_BAJA" -> TaskPriority.VERY_LOW
-            else -> TaskPriority.NORMAL
-        }
     }
 
     private fun parseCategory(raw: Any?): TaskCategory {
@@ -244,10 +162,5 @@ class FirebaseTaskService(
         is Boolean -> raw
         is String -> raw.equals("true", ignoreCase = true)
         else -> false
-    }
-
-    private fun parseTags(raw: Any?): List<String> = when (raw) {
-        is List<*> -> raw.mapNotNull { it?.toString() }
-        else -> emptyList()
     }
 }

@@ -89,11 +89,7 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(
             onGoBack = { navController.popBackStack() }
         )
     }
-    
-    composable(NavRoute.ForgotPassword.route) {
-        // ForgotPasswordScreen(navController)
-        // TODO: Implementar ForgotPasswordScreen
-    }
+
 }
 
 /**
@@ -117,11 +113,6 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
         )
     }
     
-    composable(NavRoute.TaskList.route) {
-        // TaskListScreen(navController)
-        // TODO: Implementar TaskListScreen
-    }
-    
     composable(NavRoute.TaskForm.route) {
         TaskFormScreen(
             onCancel = { navController.popBackStack() },
@@ -140,25 +131,5 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
             )
         }
     }
-    
-    composable(NavRoute.TaskDetail.route) { backStackEntry ->
-        val idTarea = backStackEntry.arguments?.getString(NavRoute.TASK_ID_ARG)
-        // TaskDetailScreen(navController, taskId)
-        // TODO: Implementar TaskDetailScreen
-    }
-    
-    composable(NavRoute.Profile.route) {
-        // ProfileScreen(navController)
-        // TODO: Implementar ProfileScreen
-    }
-    
-    composable(NavRoute.Settings.route) {
-        // SettingsScreen(navController)
-        // TODO: Implementar SettingsScreen
-    }
-    
-    composable(NavRoute.Notifications.route) {
-        // NotificationsScreen(navController)
-        // TODO: Implementar NotificationsScreen
-    }
+
 }
