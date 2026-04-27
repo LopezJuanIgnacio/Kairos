@@ -119,7 +119,7 @@ private fun insertTaskEventIntoCalendar(
 ): Boolean {
     val startMillis = task.dueDate ?: task.scheduledDate ?: System.currentTimeMillis() + 60 * 60 * 1000
     val endMillis = startMillis + maxOf(task.estimatedMinutes, 30) * 60 * 1000L
-    val categoryLabel = EnumUtils.categoryToString(task.category)
+    val categoryLabel = EnumUtils.categoryToString(context, task.category)
 
     val eventDescription = buildString {
         if (task.description.isNotBlank()) {
@@ -161,7 +161,7 @@ private fun insertTaskEventIntoCalendar(
 }
 
 private fun buildCalendarIntentForTask(context: Context, task: Task, startMillis: Long, endMillis: Long): Intent {
-    val categoryLabel = EnumUtils.categoryToString(task.category)
+    val categoryLabel = EnumUtils.categoryToString(context, task.category)
     val eventDescription = buildString {
         if (task.description.isNotBlank()) {
             append(task.description)

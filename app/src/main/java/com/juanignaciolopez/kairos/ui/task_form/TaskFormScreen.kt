@@ -193,7 +193,7 @@ private fun CategoryDropdown(
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
-            value = EnumUtils.categoryToString(selected),
+            value = stringResource(EnumUtils.categoryToStringRes(selected)),
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.common_category)) },
@@ -211,7 +211,7 @@ private fun CategoryDropdown(
         ) {
             TaskCategory.entries.forEach { category ->
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(EnumUtils.categoryToString(category)) },
+                    text = { Text(stringResource(EnumUtils.categoryToStringRes(category))) },
                     onClick = {
                         onSelected(category)
                         expanded = false

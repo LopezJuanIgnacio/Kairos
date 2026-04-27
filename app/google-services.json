@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "580508677289-icmpsfpi08qnlfl96ha2fbbj3fikb0ag.apps.googleusercontent.com",
+          "client_id": "580508677289-gpvhseh5p7oglffe8k79b3d792ajbr7h.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.juanignaciolopez.kairos",
-            "certificate_hash": "38b336e17be80fc033f8a0d548d9e6143a6b91fe"
+            "certificate_hash": "f1dacbbf98fd59a9a7d395f640db616ed6387ee6"
           }
         },
         {
