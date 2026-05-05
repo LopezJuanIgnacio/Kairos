@@ -23,7 +23,7 @@ object TaskNotificationScheduler {
         val currentTaskIds = activeTasks.map { it.id }.toSet()
         val previousTaskIds = prefs.getStringSet(PREF_KEY_SCHEDULED_TASK_IDS, emptySet()).orEmpty()
 
-        // Cancel work for tasks no longer active.
+        // Cancelar las tareas inactivas
         previousTaskIds
             .filter { it !in currentTaskIds }
             .forEach { cancelAllTaskNotificationWork(workManager, it) }
@@ -36,6 +36,7 @@ object TaskNotificationScheduler {
     }
 
     private fun scheduleTaskNotifications(workManager: WorkManager, task: Task) {
+        //Notificaciones segun categorias
         when (task.category) {
             TaskCategory.RECURRENT,
             TaskCategory.ACTIONABLE -> {

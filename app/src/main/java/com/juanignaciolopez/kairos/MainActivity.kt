@@ -22,10 +22,6 @@ import com.juanignaciolopez.kairos.ui.theme.KairosTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-/**
- * MainActivity - Punto de entrada de la aplicación
- * Configura el tema y la navegación
- */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
@@ -38,7 +34,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KairosTheme {
-                // Una superficie usando el color de fondo predeterminado del tema
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {

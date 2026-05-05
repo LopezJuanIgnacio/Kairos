@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /**
- * Servicio remoto para operaciones CRUD de tareas en Firestore.
+ * CRUD de tareas en Firestore.
  */
 class FirebaseTaskService(
     private val firestore: FirebaseFirestore?
@@ -28,7 +28,6 @@ class FirebaseTaskService(
             close(IllegalStateException("Firestore no está configurado"))
             return@callbackFlow
         }
-        // callbackFlow permite adaptar listeners de Firebase a Flow de Kotlin.
         val suscripcion = base
             .collection(USERS_COLLECTION)
             .document(idUsuario)

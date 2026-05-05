@@ -6,14 +6,13 @@ package com.juanignaciolopez.kairos.core.utils
 object ValidationUtils {
     
     /**
-     * Valida un email según el patrón estándar
+     * Valida un email
      */
     fun isValidEmail(email: String): Boolean {
         return email.matches(Regex("^[A-Za-z0-9+_.-]+@(.+)$"))
     }
     
     /**
-     * Valida que una contraseña cumpla con los requisitos mínimos
      * - Al menos 8 caracteres
      * - Al menos una mayúscula
      * - Al menos un número
@@ -32,14 +31,14 @@ object ValidationUtils {
     }
     
     /**
-     * Valida que un texto para una tarea no esté vacío
+     * Valida que no esté vacío
      */
     fun isValidTaskTitle(title: String): Boolean {
         return title.isNotBlank() && title.length <= 200
     }
     
     /**
-     * Valida descripción de tarea (opcional pero max 2000 chars)
+     * Valida descripción de tarea
      */
     fun isValidTaskDescription(description: String): Boolean {
         return description.length <= 2000
