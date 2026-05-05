@@ -417,7 +417,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .width(330.dp)
                                 .fillMaxHeight(),
-                            title = EnumUtils.categoryToString(category),
+                            title = stringResource(EnumUtils.categoryToStringRes(category)),
                             tasks = tasksByCategory[category].orEmpty(),
                             categoryHeaderDividerWidth = categoryHeaderDividerWidth,
                             onEditTask = onEditTask,
@@ -425,7 +425,7 @@ fun DashboardScreen(
                             onExportAllTasks = {
                                 requestBulkExport(
                                     tasks = tasksByCategory[category].orEmpty(),
-                                    label = EnumUtils.categoryToString(category)
+                                    label = context.getString(EnumUtils.categoryToStringRes(category))
                                 )
                             },
                             onExportTask = { task ->
@@ -455,7 +455,7 @@ fun DashboardScreen(
                 TaskCategory.entries.forEach { category ->
                     item {
                         CategorySection(
-                            title = EnumUtils.categoryToString(category),
+                            title = stringResource(EnumUtils.categoryToStringRes(category)),
                             tasks = tasksByCategory[category].orEmpty(),
                             categoryHeaderDividerWidth = categoryHeaderDividerWidth,
                             onEditTask = onEditTask,
@@ -463,7 +463,7 @@ fun DashboardScreen(
                             onExportAllTasks = {
                                 requestBulkExport(
                                     tasks = tasksByCategory[category].orEmpty(),
-                                    label = EnumUtils.categoryToString(category)
+                                    label = context.getString(EnumUtils.categoryToStringRes(category))
                                 )
                             },
                             onExportTask = { task ->

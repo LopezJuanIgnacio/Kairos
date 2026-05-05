@@ -10,12 +10,20 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 object TaskNotificationScheduler {
+    private const val PREF_KEY_LEAD_TRIGGER_PREFIX = "lead_trigger_"
+    private const val PREF_KEY_DAILY_TRIGGER_PREFIX = "daily_trigger_"
 
     private const val PREFS_NAME = "kairos_notifications"
     private const val PREF_KEY_SCHEDULED_TASK_IDS = "scheduled_task_ids"
 
+    @RequiresApi(Build.VERSION_CODES.S)
     fun syncNotifications(context: Context, activeTasks: List<Task>) {
         val workManager = WorkManager.getInstance(context)
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -26,62 +34,123 @@ object TaskNotificationScheduler {
         // Cancelar las tareas inactivas
         previousTaskIds
             .filter { it !in currentTaskIds }
-            .forEach { cancelAllTaskNotificationWork(workManager, it) }
+            .forEach { cancelAllTaskNotificationWork(context, workManager, prefs, it) }
 
         activeTasks.forEach { task ->
-            scheduleTaskNotifications(workManager, task)
+            scheduleTaskNotifications(context, workManager, prefs, task)
         }
 
         prefs.edit().putStringSet(PREF_KEY_SCHEDULED_TASK_IDS, currentTaskIds).apply()
     }
 
-    private fun scheduleTaskNotifications(workManager: WorkManager, task: Task) {
-        //Notificaciones segun categorias
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun scheduleTaskNotifications(
+        context: Context,
+        workManager: WorkManager,
+        prefs: android.content.SharedPreferences,
+        task: Task
+    ) {
         when (task.category) {
             TaskCategory.RECURRENT,
             TaskCategory.ACTIONABLE -> {
-                cancelLeadNotifications(workManager, task.id)
-                scheduleDailyNotification(workManager, task)
+                cancelLeadNotifications(workManager, prefs, task.id)
+                scheduleDailyAlarm(context, prefs, task)
             }
 
             TaskCategory.SHORT_TERM -> {
-                cancelDailyNotification(workManager, task.id)
-                scheduleDueDateLeadNotification(workManager, task, leadDays = 1)
+                cancelDailyNotification(context, task.id)
+                scheduleDueDateLeadNotification(workManager, prefs, task, leadDays = 1)
             }
 
             TaskCategory.LONG_TERM -> {
-                cancelDailyNotification(workManager, task.id)
-                scheduleDueDateLeadNotification(workManager, task, leadDays = 7)
+                cancelDailyNotification(context, task.id)
+                scheduleDueDateLeadNotification(workManager, prefs, task, leadDays = 7)
             }
 
             TaskCategory.INCUBATOR -> {
-                cancelAllTaskNotificationWork(workManager, task.id)
+                cancelAllTaskNotificationWork(context, workManager, prefs, task.id)
             }
         }
     }
 
-    private fun scheduleDailyNotification(workManager: WorkManager, task: Task) {
-        val request = PeriodicWorkRequestBuilder<TaskNotificationWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(delayUntilNextDailyReminderMillis(task.dueDate), TimeUnit.MILLISECONDS)
-            .setInputData(TaskNotificationWorker.inputData(task.id, task.title, task.category))
-            .addTag(tagForTask(task.id))
-            .build()
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun scheduleDailyAlarm(context: Context, prefs: android.content.SharedPreferences, task: Task) {
+        val delay = delayUntilNextDailyReminderMillis(task.dueDate)
+        val triggerAt = System.currentTimeMillis() + delay
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        workManager.enqueueUniquePeriodicWork(
-            dailyWorkName(task.id),
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request
-        )
-    }
+        // If app cannot schedule exact alarms, fall back to WorkManager (less precise)
+        if (!alarmManager.canScheduleExactAlarms()) {
+            val workManager = WorkManager.getInstance(context)
+            val request = PeriodicWorkRequestBuilder<TaskNotificationWorker>(1, TimeUnit.DAYS)
+                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .setInputData(TaskNotificationWorker.inputData(task.id, task.title, task.category))
+                .addTag(tagForTask(task.id))
+                .build()
 
-    private fun scheduleDueDateLeadNotification(workManager: WorkManager, task: Task, leadDays: Int) {
-        val dueDate = task.dueDate ?: run {
-            cancelLeadNotifications(workManager, task.id)
+            workManager.enqueueUniquePeriodicWork(
+                dailyWorkName(task.id),
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request
+            )
+
+            // store trigger to avoid re-enqueueing the same schedule repeatedly
+            val triggerKey = "$PREF_KEY_DAILY_TRIGGER_PREFIX${task.id}"
+            prefs.edit().putLong(triggerKey, triggerAt).apply()
             return
         }
 
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra(TaskNotificationWorker.KEY_TASK_ID, task.id)
+            putExtra(TaskNotificationWorker.KEY_TASK_TITLE, task.title)
+            putExtra(TaskNotificationWorker.KEY_TASK_CATEGORY, task.category.name)
+        }
+
+        val requestCode = task.id.hashCode()
+        val pending = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Avoid re-scheduling when trigger is unchanged
+        val triggerKey = "$PREF_KEY_DAILY_TRIGGER_PREFIX${task.id}"
+        val previous = prefs.getLong(triggerKey, -1L)
+        if (previous == triggerAt) return
+
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        prefs.edit().putLong(triggerKey, triggerAt).apply()
+    }
+
+    private fun scheduleDueDateLeadNotification(
+        workManager: WorkManager,
+        prefs: android.content.SharedPreferences,
+        task: Task,
+        leadDays: Int
+    ) {
+        val dueDate = task.dueDate ?: run {
+            cancelLeadNotifications(workManager, prefs, task.id)
+            return
+        }
+
+        val workName = leadWorkName(task.id, leadDays)
+        val triggerKey = leadTriggerKey(workName)
         val triggerAt = dueDate - TimeUnit.DAYS.toMillis(leadDays.toLong())
-        val delay = (triggerAt - System.currentTimeMillis()).coerceAtLeast(0L)
+        val now = System.currentTimeMillis()
+        val previousTriggerAt = prefs.getLong(triggerKey, -1L)
+
+        if (triggerAt <= now) {
+            workManager.cancelUniqueWork(workName)
+            prefs.edit().remove(triggerKey).apply()
+            return
+        }
+
+        if (previousTriggerAt == triggerAt) {
+            return
+        }
+
+        val delay = triggerAt - now
 
         val request = OneTimeWorkRequestBuilder<TaskNotificationWorker>()
             .setInitialDelay(delay, TimeUnit.MILLISECONDS)
@@ -90,31 +159,61 @@ object TaskNotificationScheduler {
             .build()
 
         workManager.enqueueUniqueWork(
-            leadWorkName(task.id, leadDays),
+            workName,
             ExistingWorkPolicy.REPLACE,
             request
         )
 
+        prefs.edit().putLong(triggerKey, triggerAt).apply()
+
         // Ensure only one lead rule remains active for each task.
         if (leadDays == 1) {
             workManager.cancelUniqueWork(leadWorkName(task.id, 7))
+            prefs.edit().remove(leadTriggerKey(leadWorkName(task.id, 7))).apply()
         } else if (leadDays == 7) {
             workManager.cancelUniqueWork(leadWorkName(task.id, 1))
+            prefs.edit().remove(leadTriggerKey(leadWorkName(task.id, 1))).apply()
         }
     }
 
-    private fun cancelAllTaskNotificationWork(workManager: WorkManager, taskId: String) {
-        cancelDailyNotification(workManager, taskId)
-        cancelLeadNotifications(workManager, taskId)
+    private fun cancelAllTaskNotificationWork(
+        context: Context,
+        workManager: WorkManager,
+        prefs: android.content.SharedPreferences,
+        taskId: String
+    ) {
+        cancelDailyNotification(context, taskId)
+        cancelLeadNotifications(workManager, prefs, taskId)
+    }
+    private fun cancelDailyNotification(context: Context, taskId: String) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pending = PendingIntent.getBroadcast(
+            context,
+            taskId.hashCode(),
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (pending != null) {
+            alarmManager.cancel(pending)
+        }
+        // Also cancel potential WorkManager fallback
+        WorkManager.getInstance(context).cancelUniqueWork(dailyWorkName(taskId))
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().remove("$PREF_KEY_DAILY_TRIGGER_PREFIX$taskId").apply()
     }
 
-    private fun cancelDailyNotification(workManager: WorkManager, taskId: String) {
-        workManager.cancelUniqueWork(dailyWorkName(taskId))
-    }
-
-    private fun cancelLeadNotifications(workManager: WorkManager, taskId: String) {
+    private fun cancelLeadNotifications(
+        workManager: WorkManager,
+        prefs: android.content.SharedPreferences,
+        taskId: String
+    ) {
         workManager.cancelUniqueWork(leadWorkName(taskId, 1))
         workManager.cancelUniqueWork(leadWorkName(taskId, 7))
+        prefs.edit()
+            .remove(leadTriggerKey(leadWorkName(taskId, 1)))
+            .remove(leadTriggerKey(leadWorkName(taskId, 7)))
+            .apply()
     }
 
     private fun delayUntilNextDailyReminderMillis(reminderAt: Long?): Long {
@@ -144,4 +243,6 @@ object TaskNotificationScheduler {
     private fun leadWorkName(taskId: String, leadDays: Int): String = "task_due_${leadDays}d_$taskId"
 
     private fun tagForTask(taskId: String): String = "task_notification_$taskId"
+
+    private fun leadTriggerKey(workName: String): String = "$PREF_KEY_LEAD_TRIGGER_PREFIX$workName"
 }
