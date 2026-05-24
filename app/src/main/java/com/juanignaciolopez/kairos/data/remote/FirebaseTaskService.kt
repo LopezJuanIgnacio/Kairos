@@ -1,6 +1,7 @@
 package com.juanignaciolopez.kairos.data.remote
 
 import com.google.firebase.firestore.FirebaseFirestore
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.toObject
 import com.juanignaciolopez.kairos.data.models.Result
@@ -80,13 +81,32 @@ class FirebaseTaskService(
 
     suspend fun updateTask(idUsuario: String, tarea: Task): Result<Task> = try {
         val base = firestore ?: return Result.Error("Firestore no está configurado")
-        base
+        Log.d("KairosExport", "updateTask: writing doc=${tarea.id} isExported=${tarea.isExported}")
+        val docRef = base
             .collection(USERS_COLLECTION)
             .document(idUsuario)
             .collection(TASKS_COLLECTION)
             .document(tarea.id)
+
+        docRef
             .set(tarea)
+            .addOnSuccessListener {
+                Log.d("KairosExport", "updateTask: write success doc=${tarea.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.d("KairosExport", "updateTask: write failure doc=${tarea.id} error=${e.message}")
+            }
             .await()
+
+        // Read back the document to verify stored fields
+        try {
+            val fresh = docRef.get().await()
+            Log.d("KairosExport", "updateTask: readback doc=${tarea.id} data=${fresh.data}")
+        } catch (e: Exception) {
+            Log.d("KairosExport", "updateTask: readback failed doc=${tarea.id} error=${e.message}")
+        }
+
+        Log.d("KairosExport", "updateTask: completed await doc=${tarea.id}")
         Result.Success(tarea)
     } catch (e: Exception) {
         Result.Error("Error al actualizar tarea: ${firestoreErrorMessage(e)}", e)
@@ -123,6 +143,16 @@ class FirebaseTaskService(
 
     private fun buildTaskFromMap(data: Map<String, Any?>, docId: String): Task {
         val id = data["id"]?.toString()?.takeIf { it.isNotBlank() } ?: docId
+        val rawIsExported = data["isExported"] ?: data["exported"]
+        val parsedIsExported = parseBoolean(rawIsExported)
+
+        val rawIsNextAction = data["isNextAction"] ?: data["nextAction"]
+        val parsedIsNextAction = parseBoolean(rawIsNextAction)
+
+        Log.d(
+            "KairosExport",
+            "firestore doc=$docId id=$id rawIsExported=$rawIsExported parsedIsExported=$parsedIsExported rawIsNextAction=$rawIsNextAction parsedIsNextAction=$parsedIsNextAction"
+        )
 
         return Task(
             id = id,
@@ -135,8 +165,8 @@ class FirebaseTaskService(
             scheduledDate = parseLong(data["scheduledDate"]),
             dueDate = parseLong(data["dueDate"]),
             estimatedMinutes = parseInt(data["estimatedMinutes"]),
-            isNextAction = parseBoolean(data["isNextAction"]),
-            isExported = parseBoolean(data["isExported"])
+            isNextAction = parsedIsNextAction,
+            isExported = parsedIsExported
         )
     }
 
@@ -148,7 +178,6 @@ class FirebaseTaskService(
             "SHORT_TERM", "CORTO_PLAZO", "CORTO PLAZO" -> TaskCategory.SHORT_TERM
             "LONG_TERM", "LARGO_PLAZO", "LARGO PLAZO" -> TaskCategory.LONG_TERM
             "INCUBATOR", "INCUBADORA" -> TaskCategory.INCUBATOR
-            "WORK", "PERSONAL", "HEALTH", "FINANCE", "LEARNING", "FAMILY", "HOME", "SOMEDAY", "OTHER" -> TaskCategory.ACTIONABLE
             else -> TaskCategory.ACTIONABLE
         }
     }
@@ -167,7 +196,14 @@ class FirebaseTaskService(
 
     private fun parseBoolean(raw: Any?): Boolean = when (raw) {
         is Boolean -> raw
-        is String -> raw.equals("true", ignoreCase = true)
+        is Number -> raw.toInt() != 0
+        is String -> {
+            val normalized = raw.trim()
+            normalized.equals("true", ignoreCase = true) ||
+                normalized == "1" ||
+                normalized.equals("yes", ignoreCase = true) ||
+                normalized.equals("si", ignoreCase = true)
+        }
         else -> false
     }
 }

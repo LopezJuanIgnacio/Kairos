@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import android.util.Log
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -96,14 +97,34 @@ fun DashboardScreen(
     var pendingCalendarExport by remember { mutableStateOf<PendingCalendarExport?>(null) }
     var showBulkExportCountDialog by remember { mutableStateOf(false) }
     var showBulkIncludeExportedDialog by remember { mutableStateOf(false) }
-    var pendingBulkExportTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
+    var pendingBulkExportSource by remember { mutableStateOf<PendingBulkExportSource?>(null) }
+    var pendingBulkExportCount by remember { mutableStateOf(0) }
     var pendingBulkExportLabel by remember { mutableStateOf(context.getString(R.string.dashboard_tasks_label)) }
+    var locallyExportedTaskIds by remember(uiState.userId) { mutableStateOf<Set<String>>(emptySet()) }
     var hasRequestedNotificationPermission by rememberSaveable { mutableStateOf(false) }
 
     val activeTasks = allTasks
 
     val tasksByCategory = TaskCategory.entries.associateWith { category ->
         activeTasks.filter { it.category == category }
+    }
+
+    val exportedTaskIds = remember(allTasks, locallyExportedTaskIds) {
+        allTasks.asSequence()
+            .filter { it.isExported }
+            .map { it.id }
+            .toSet() + locallyExportedTaskIds
+    }
+
+    fun markTaskLocallyExported(taskId: String) {
+        locallyExportedTaskIds = locallyExportedTaskIds + taskId
+    }
+
+    fun resolveBulkExportTasks(source: PendingBulkExportSource): List<Task> {
+        return when (source) {
+            PendingBulkExportSource.AllTasks -> activeTasks
+            is PendingBulkExportSource.Category -> tasksByCategory[source.category].orEmpty()
+        }
     }
 
     val calendarPermissionLauncher = rememberLauncherForActivityResult(
@@ -123,6 +144,7 @@ fun DashboardScreen(
         when (val request = pendingCalendarExport) {
             is PendingCalendarExport.SingleTask -> {
                 if (exportTaskToCalendar(context, request.task)) {
+                    markTaskLocallyExported(request.task.id)
                     viewModel.markTaskExported(request.task.id)
                 } else {
                     scope.launch {
@@ -135,7 +157,10 @@ fun DashboardScreen(
                 val result = exportTasksDirectlyToCalendar(
                     context = context,
                     tasks = request.tasks,
-                    onTaskExported = { viewModel.markTaskExported(it.id) }
+                    onTaskExported = {
+                        markTaskLocallyExported(it.id)
+                        viewModel.markTaskExported(it.id)
+                    }
                 )
                 if (result.total == 0) {
                     scope.launch {
@@ -171,6 +196,7 @@ fun DashboardScreen(
             request = request,
             onReady = { readyRequest ->
                 if (exportTaskToCalendar(context, readyRequest.task)) {
+                    markTaskLocallyExported(readyRequest.task.id)
                     viewModel.markTaskExported(readyRequest.task.id)
                 } else {
                     scope.launch {
@@ -189,8 +215,17 @@ fun DashboardScreen(
         val tasksToExport = if (includeAlreadyExported) {
             baseTasks
         } else {
-            baseTasks.filter { !it.isExported }
+            baseTasks.filter { task ->
+                val remotelyExported = task.isExported
+                val locallyExported = task.id in locallyExportedTaskIds
+                !remotelyExported && !locallyExported
+            }
         }
+
+        Log.d(
+            "KairosExport",
+            "launchBulkTasksExport includeAlreadyExported=$includeAlreadyExported baseTasks=${baseTasks.map { it.id }} baseStatuses=${baseTasks.map { "${it.id}:${it.isExported}:${it.id in locallyExportedTaskIds}" }} exportedTaskIds=$exportedTaskIds tasksToExport=${tasksToExport.map { it.id }}"
+        )
 
         if (tasksToExport.isEmpty()) {
             scope.launch {
@@ -207,7 +242,10 @@ fun DashboardScreen(
                 val result = exportTasksDirectlyToCalendar(
                     context = context,
                     tasks = readyRequest.tasks,
-                    onTaskExported = { viewModel.markTaskExported(it.id) }
+                    onTaskExported = {
+                        markTaskLocallyExported(it.id)
+                        viewModel.markTaskExported(it.id)
+                    }
                 )
                 scope.launch {
                     if (result.total == 0) {
@@ -232,7 +270,7 @@ fun DashboardScreen(
         )
     }
 
-    fun requestBulkExport(tasks: List<Task>, label: String) {
+    fun requestBulkExport(source: PendingBulkExportSource, tasks: List<Task>, label: String) {
         if (tasks.isEmpty()) {
             scope.launch {
                 snackbarHostState.showSnackbar(context.getString(R.string.dashboard_no_tasks_to_export))
@@ -240,7 +278,8 @@ fun DashboardScreen(
             return
         }
 
-        pendingBulkExportTasks = tasks
+        pendingBulkExportSource = source
+        pendingBulkExportCount = tasks.size
         pendingBulkExportLabel = label
         showBulkExportCountDialog = true
     }
@@ -310,7 +349,11 @@ fun DashboardScreen(
 
                         IconButton(
                             onClick = {
-                                requestBulkExport(activeTasks, context.getString(R.string.dashboard_all_tasks_label))
+                                requestBulkExport(
+                                    source = PendingBulkExportSource.AllTasks,
+                                    tasks = activeTasks,
+                                    label = context.getString(R.string.dashboard_all_tasks_label)
+                                )
                             },
                             modifier = Modifier.size(52.dp)
                         ) {
@@ -390,7 +433,11 @@ fun DashboardScreen(
 
                         IconButton(
                             onClick = {
-                                requestBulkExport(activeTasks, context.getString(R.string.dashboard_all_tasks_label))
+                                requestBulkExport(
+                                    source = PendingBulkExportSource.AllTasks,
+                                    tasks = activeTasks,
+                                    label = context.getString(R.string.dashboard_all_tasks_label)
+                                )
                             },
                             modifier = Modifier.size(40.dp)
                         ) {
@@ -424,6 +471,7 @@ fun DashboardScreen(
                             onDeleteTask = { pendingDeleteTask = it },
                             onExportAllTasks = {
                                 requestBulkExport(
+                                    source = PendingBulkExportSource.Category(category),
                                     tasks = tasksByCategory[category].orEmpty(),
                                     label = context.getString(EnumUtils.categoryToStringRes(category))
                                 )
@@ -462,6 +510,7 @@ fun DashboardScreen(
                             onDeleteTask = { pendingDeleteTask = it },
                             onExportAllTasks = {
                                 requestBulkExport(
+                                    source = PendingBulkExportSource.Category(category),
                                     tasks = tasksByCategory[category].orEmpty(),
                                     label = context.getString(EnumUtils.categoryToStringRes(category))
                                 )
@@ -558,7 +607,7 @@ fun DashboardScreen(
                 Text(
                     stringResource(
                         R.string.dashboard_bulk_export_count_message,
-                        pendingBulkExportTasks.size,
+                        pendingBulkExportCount,
                         pendingBulkExportLabel
                     )
                 )
@@ -582,6 +631,7 @@ fun DashboardScreen(
     }
 
     if (showBulkIncludeExportedDialog) {
+        val bulkExportSource = pendingBulkExportSource
         AlertDialog(
             onDismissRequest = { showBulkIncludeExportedDialog = false },
             title = { Text(stringResource(R.string.dashboard_exported_tasks_title)) },
@@ -592,8 +642,9 @@ fun DashboardScreen(
                 TextButton(
                     onClick = {
                         showBulkIncludeExportedDialog = false
+                        val source = bulkExportSource ?: return@TextButton
                         launchBulkTasksExport(
-                            baseTasks = pendingBulkExportTasks,
+                            baseTasks = resolveBulkExportTasks(source),
                             includeAlreadyExported = true
                         )
                     }
@@ -605,8 +656,9 @@ fun DashboardScreen(
                 TextButton(
                     onClick = {
                         showBulkIncludeExportedDialog = false
+                        val source = bulkExportSource ?: return@TextButton
                         launchBulkTasksExport(
-                            baseTasks = pendingBulkExportTasks,
+                            baseTasks = resolveBulkExportTasks(source),
                             includeAlreadyExported = false
                         )
                     }
@@ -616,6 +668,12 @@ fun DashboardScreen(
             }
         )
     }
+}
+
+private sealed interface PendingBulkExportSource {
+    data object AllTasks : PendingBulkExportSource
+
+    data class Category(val category: TaskCategory) : PendingBulkExportSource
 }
 
 private sealed interface PendingCalendarExport {

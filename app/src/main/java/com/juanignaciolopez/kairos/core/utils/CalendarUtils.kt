@@ -10,6 +10,7 @@ import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import com.juanignaciolopez.kairos.data.models.Task
 import java.util.TimeZone
+import android.util.Log
 
 data class CalendarExportResult(
     val exportedCount: Int,
@@ -64,9 +65,13 @@ fun exportTasksDirectlyToCalendar(
     val calendarId = getWritableCalendarId(context)
         ?: return CalendarExportResult(exportedCount = 0, total = tasks.size)
 
+    Log.d("KairosExport", "exportTasksDirectlyToCalendar: total=${tasks.size} ids=${tasks.map { it.id }}")
+
     var exportedCount = 0
     tasks.forEach { task ->
-        if (insertTaskEventIntoCalendar(context, calendarId, task)) {
+        val inserted = insertTaskEventIntoCalendar(context, calendarId, task)
+        Log.d("KairosExport", "insertTaskEventIntoCalendar id=${task.id} title=${task.title} inserted=$inserted")
+        if (inserted) {
             onTaskExported(task)
             exportedCount += 1
         }
