@@ -1,6 +1,8 @@
 package com.juanignaciolopez.kairos.ui.dashboard
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanignaciolopez.kairos.core.notifications.TaskNotificationScheduler
@@ -39,6 +41,7 @@ class DashboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
+    @RequiresApi(Build.VERSION_CODES.S)
     val tasks: StateFlow<List<Task>> = authRepository.observeCurrentUser()
         .map { user -> user?.id.orEmpty() }
         .distinctUntilChanged()

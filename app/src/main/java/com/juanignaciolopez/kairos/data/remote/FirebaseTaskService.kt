@@ -98,7 +98,6 @@ class FirebaseTaskService(
             }
             .await()
 
-        // Read back the document to verify stored fields
         try {
             val fresh = docRef.get().await()
             Log.d("KairosExport", "updateTask: readback doc=${tarea.id} data=${fresh.data}")
@@ -149,10 +148,6 @@ class FirebaseTaskService(
         val rawIsNextAction = data["isNextAction"] ?: data["nextAction"]
         val parsedIsNextAction = parseBoolean(rawIsNextAction)
 
-        Log.d(
-            "KairosExport",
-            "firestore doc=$docId id=$id rawIsExported=$rawIsExported parsedIsExported=$parsedIsExported rawIsNextAction=$rawIsNextAction parsedIsNextAction=$parsedIsNextAction"
-        )
 
         return Task(
             id = id,

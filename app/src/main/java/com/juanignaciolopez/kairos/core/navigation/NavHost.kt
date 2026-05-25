@@ -44,7 +44,6 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(
 ) {
     composable(NavRoute.Onboarding.route) {
         OnboardingScreen(
-            isHelpMode = false,
             onFinish = {
                 onOnboardingCompleted()
                 navController.navigate(NavRoute.SignIn.route) {
@@ -57,14 +56,6 @@ private fun androidx.navigation.NavGraphBuilder.authGraph(
                     popUpTo(NavRoute.Onboarding.route) { inclusive = true }
                 }
             }
-        )
-    }
-
-    composable(NavRoute.OnboardingHelp.route) {
-        OnboardingScreen(
-            isHelpMode = true,
-            onFinish = { navController.popBackStack() },
-            onSkip = { navController.popBackStack() }
         )
     }
     
@@ -100,7 +91,7 @@ private fun androidx.navigation.NavGraphBuilder.mainGraph(
 ) {
     composable(NavRoute.Dashboard.route) {
         DashboardScreen(
-            onOpenHelp = { navController.navigate(NavRoute.OnboardingHelp.route) },
+            onOpenHelp = { navController.navigate(NavRoute.Onboarding.route) },
             onCreateTask = { navController.navigate(NavRoute.TaskForm.route) },
             onEditTask = { taskId ->
                 navController.navigate(NavRoute.TaskFormWithId.createRoute(taskId))

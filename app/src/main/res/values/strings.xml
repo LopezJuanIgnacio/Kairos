@@ -94,4 +94,5 @@
     <string name="onboarding_category_incubator_desc">Tasks that you cannot proceed with and therefore do not have a deadline.</string>
     <string name="onboarding_features_create_tasks">Create new\ntasks with with\nthe plus button</string>
     <string name="onboarding_features_export_calendar">Export your\ntasks as events\nfor your\ncalendar app</string>
+    <string name="IncEmail">\"Incorrect Email\"</string>
 </resources>

@@ -44,7 +44,7 @@ class AuthViewModel @Inject constructor(
             return
         }
         if (estado.password.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Password is required.") }
+            _uiState.update { it.copy(errorMessage = "Contraseña requerida.") }
             return
         }
 

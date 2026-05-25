@@ -41,7 +41,6 @@ private const val LAST_PAGE_INDEX = 3
 
 @Composable
 fun OnboardingScreen(
-    isHelpMode: Boolean,
     onFinish: () -> Unit,
     onSkip: () -> Unit = onFinish
 ) {

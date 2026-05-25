@@ -92,4 +92,5 @@
 	<string name="onboarding_category_incubator_desc">Tareas con las que no podes avanzar y por eso no tienen fecha limite.</string>
 	<string name="onboarding_features_create_tasks">Crea nuevas\ntareas con\nel boton +</string>
 	<string name="onboarding_features_export_calendar">Exporta tus\ntareas como eventos\npara tu app\nde calendario</string>
+    <string name="IncEmail">\"Email incorrecto\"</string>
 </resources>

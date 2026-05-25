@@ -3,6 +3,7 @@ package com.juanignaciolopez.kairos.ui.dashboard
 import android.Manifest
 import android.content.res.Configuration
 import android.content.Context
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -55,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -74,6 +76,7 @@ import com.juanignaciolopez.kairos.data.models.TaskCategory
 import com.juanignaciolopez.kairos.ui.auth.AuthViewModel
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
