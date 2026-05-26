@@ -1,6 +1,9 @@
 package com.juanignaciolopez.kairos.core.preferences
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
+
 //Guardar el estado del onboarding
 class OnboardingPreferences(context: Context) {
     private val sharedPreferences =

@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import com.juanignaciolopez.kairos.data.models.Task
+import com.juanignaciolopez.kairos.data.models.TaskCategory
 import java.util.TimeZone
 import android.util.Log
 
@@ -143,6 +144,9 @@ private fun insertTaskEventIntoCalendar(
         put(CalendarContract.Events.DESCRIPTION, eventDescription)
         put(CalendarContract.Events.DTSTART, startMillis)
         put(CalendarContract.Events.DTEND, endMillis)
+        if (shouldRepeatDaily(task)) {
+            put(CalendarContract.Events.RRULE, DAILY_RECURRING_RULE)
+        }
         put(CalendarContract.Events.ALL_DAY, 0)
         put(CalendarContract.Events.STATUS, CalendarContract.Events.STATUS_CONFIRMED)
         put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
@@ -184,5 +188,14 @@ private fun buildCalendarIntentForTask(context: Context, task: Task, startMillis
         putExtra(CalendarContract.Events.DESCRIPTION, eventDescription)
         putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startMillis)
         putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
+        if (shouldRepeatDaily(task)) {
+            putExtra(CalendarContract.Events.RRULE, DAILY_RECURRING_RULE)
+        }
     }
+}
+
+private const val DAILY_RECURRING_RULE = "FREQ=DAILY"
+
+private fun shouldRepeatDaily(task: Task): Boolean {
+    return task.category == TaskCategory.RECURRENT || task.category == TaskCategory.ACTIONABLE
 }
