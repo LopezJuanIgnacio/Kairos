@@ -1,4 +1,4 @@
-package com.juanignaciolopez.kairos.core.components
+package com.juanignaciolopez.kairos.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

@@ -79,7 +79,7 @@ object TaskNotificationScheduler {
         val triggerAt = System.currentTimeMillis() + delay
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        // If app cannot schedule exact alarms, fall back to WorkManager (less precise)
+        // Si la version es antigua, utiliza WorkManager
         if (!alarmManager.canScheduleExactAlarms()) {
             val workManager = WorkManager.getInstance(context)
             val request = PeriodicWorkRequestBuilder<TaskNotificationWorker>(1, TimeUnit.DAYS)
@@ -94,7 +94,7 @@ object TaskNotificationScheduler {
                 request
             )
 
-            // store trigger to avoid re-enqueueing the same schedule repeatedly
+            // Guardar el trigger para evitar re-scheduling innecesario
             val triggerKey = "$PREF_KEY_DAILY_TRIGGER_PREFIX${task.id}"
             prefs.edit().putLong(triggerKey, triggerAt).apply()
             return
@@ -114,7 +114,7 @@ object TaskNotificationScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Avoid re-scheduling when trigger is unchanged
+        // Verificar si ya hay una alarma programada con el mismo trigger para evitar reprogramar innecesariamente
         val triggerKey = "$PREF_KEY_DAILY_TRIGGER_PREFIX${task.id}"
         val previous = prefs.getLong(triggerKey, -1L)
         if (previous == triggerAt) return
@@ -166,7 +166,7 @@ object TaskNotificationScheduler {
 
         prefs.edit().putLong(triggerKey, triggerAt).apply()
 
-        // Ensure only one lead rule remains active for each task.
+        // Cancelar la otra notificación de lead para evitar confusión
         if (leadDays == 1) {
             workManager.cancelUniqueWork(leadWorkName(task.id, 7))
             prefs.edit().remove(leadTriggerKey(leadWorkName(task.id, 7))).apply()
@@ -197,7 +197,7 @@ object TaskNotificationScheduler {
         if (pending != null) {
             alarmManager.cancel(pending)
         }
-        // Also cancel potential WorkManager fallback
+        // También cancelar cualquier trabajo programado con WorkManager por si el dispositivo no soporta alarmas exactas
         WorkManager.getInstance(context).cancelUniqueWork(dailyWorkName(taskId))
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().remove("$PREF_KEY_DAILY_TRIGGER_PREFIX$taskId").apply()

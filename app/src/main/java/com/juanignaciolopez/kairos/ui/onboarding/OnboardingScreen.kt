@@ -34,7 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.juanignaciolopez.kairos.R
-import com.juanignaciolopez.kairos.core.components.CircleIcon
+import com.juanignaciolopez.kairos.ui.components.CircleIcon
 import kotlinx.coroutines.launch
 
 private const val LAST_PAGE_INDEX = 3

@@ -2,7 +2,6 @@ package com.juanignaciolopez.kairos.ui.dashboard
 
 import android.Manifest
 import android.content.res.Configuration
-import android.content.Context
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,8 +27,6 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,8 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.juanignaciolopez.kairos.R
-import com.juanignaciolopez.kairos.core.components.CircleIcon
-import com.juanignaciolopez.kairos.core.components.CategorySection
+import com.juanignaciolopez.kairos.ui.components.CircleIcon
+import com.juanignaciolopez.kairos.ui.components.CategorySection
 import com.juanignaciolopez.kairos.core.utils.CALENDAR_PERMISSIONS
 import com.juanignaciolopez.kairos.core.utils.RequestNotificationPermissionIfNeeded
 import com.juanignaciolopez.kairos.core.utils.exportTaskToCalendar
